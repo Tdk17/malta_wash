@@ -7,6 +7,7 @@ abstract interface class AuthRepository {
     required String phone,
     required String email,
     required String password,
+    String? tenantSlug,
   });
   Future<Map<String, dynamic>> me();
   Future<void> logout();
