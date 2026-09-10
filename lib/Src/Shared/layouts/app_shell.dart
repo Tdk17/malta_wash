@@ -29,24 +29,36 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 980;
-    if (!isDesktop) {
+    final desktop = MediaQuery.sizeOf(context).width >= 980;
+    if (!desktop) {
       return Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA),
         appBar: AppBar(
-          title: Watch((_) => Row(mainAxisSize: MainAxisSize.min, children: [
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          elevation: 0,
+          titleSpacing: 8,
+          title: Watch((_) => Row(children: [
                 BrandLogo(size: 34, logoUrl: branding.branding.value.logoUrl),
                 const SizedBox(width: 10),
-                Text(branding.branding.value.companyName),
+                Expanded(
+                  child: Text(
+                    branding.branding.value.companyName,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                ),
               ])),
         ),
         drawer: Drawer(child: SafeArea(child: _Navigation(mode: widget.mode))),
         body: widget.child,
       );
     }
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
       body: Row(children: [
-        SizedBox(width: 280, child: _Navigation(mode: widget.mode)),
-        const VerticalDivider(width: 1),
+        SizedBox(width: widget.mode == ShellMode.client ? 248 : 280, child: _Navigation(mode: widget.mode)),
         Expanded(child: widget.child),
       ]),
     );
@@ -65,31 +77,54 @@ class _Navigation extends StatelessWidget {
       ShellMode.admin => _adminItems,
       ShellMode.superAdmin => _superItems,
     };
+
     return Container(
-      color: const Color(0xFF0F172A),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF10151C), Color(0xFF0B0F14)],
+        ),
+      ),
       child: Column(children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 28, 20, 22),
+          padding: const EdgeInsets.fromLTRB(18, 25, 18, 20),
           child: Watch((_) => Row(children: [
-                BrandLogo(size: 46, logoUrl: branding.branding.value.logoUrl),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(branding.branding.value.companyName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-                  const Text('powered by Malta Wash', style: TextStyle(color: Colors.white54, fontSize: 11)),
-                ])),
+                BrandLogo(size: 44, logoUrl: branding.branding.value.logoUrl),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(
+                      branding.branding.value.companyName,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      mode == ShellMode.client ? 'Área do cliente' : 'powered by Malta Wash',
+                      style: const TextStyle(color: Colors.white38, fontSize: 10.5),
+                    ),
+                  ]),
+                ),
               ])),
         ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Divider(color: Colors.white10, height: 1),
+        ),
+        const SizedBox(height: 12),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 11),
             children: items.map((item) => _NavTile(item: item)).toList(),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(11, 8, 11, 16),
           child: ListTile(
-            leading: const Icon(Icons.logout, color: Colors.white70),
-            title: const Text('Sair', style: TextStyle(color: Colors.white70)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            leading: const Icon(Icons.logout_rounded, color: Colors.white54, size: 20),
+            title: const Text('Sair', style: TextStyle(color: Colors.white60, fontWeight: FontWeight.w600)),
             onTap: () async {
               await sl<AuthController>().logout();
               if (context.mounted) context.go(RoutePaths.login);
@@ -101,17 +136,12 @@ class _Navigation extends StatelessWidget {
   }
 
   static const _clientItems = [
-    _NavItem('Início', Icons.home_outlined, RoutePaths.client),
-    _NavItem('Meus veículos', Icons.directions_car_outlined, RoutePaths.clientVehicles),
-    _NavItem('Agendar lavagem', Icons.calendar_month_outlined, RoutePaths.clientBooking),
-    _NavItem('Agendamentos', Icons.event_note_outlined, RoutePaths.clientAppointments),
-    _NavItem('Planos e assinaturas', Icons.workspace_premium_outlined, RoutePaths.clientPlans),
-    _NavItem('Pacotes e créditos', Icons.inventory_2_outlined, RoutePaths.clientPackages),
-    _NavItem('Cupons e benefícios', Icons.redeem_outlined, RoutePaths.clientBenefits),
-    _NavItem('Pagamentos', Icons.payments_outlined, RoutePaths.clientPayments),
-    _NavItem('Notificações', Icons.notifications_none, RoutePaths.clientNotifications),
-    _NavItem('Perfil', Icons.person_outline, RoutePaths.clientProfile),
-    _NavItem('Suporte', Icons.help_outline, RoutePaths.clientSupport),
+    _NavItem('Início', Icons.home_rounded, RoutePaths.client),
+    _NavItem('Agendar', Icons.calendar_month_rounded, RoutePaths.clientBooking),
+    _NavItem('Meus agendamentos', Icons.event_note_rounded, RoutePaths.clientAppointments),
+    _NavItem('Meus veículos', Icons.directions_car_filled_rounded, RoutePaths.clientVehicles),
+    _NavItem('Meu plano', Icons.workspace_premium_rounded, RoutePaths.clientPlans),
+    _NavItem('Perfil', Icons.person_rounded, RoutePaths.clientProfile),
   ];
 
   static const _adminItems = [
@@ -158,13 +188,22 @@ class _NavTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final active = GoRouterState.of(context).uri.path == item.route;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 3),
+      padding: const EdgeInsets.only(bottom: 5),
       child: ListTile(
+        minLeadingWidth: 22,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 1),
         selected: active,
-        selectedTileColor: Colors.white10,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        leading: Icon(item.icon, color: active ? Colors.orangeAccent : Colors.white60),
-        title: Text(item.label, style: TextStyle(color: active ? Colors.white : Colors.white70, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+        selectedTileColor: const Color(0xFFFF6A00),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+        leading: Icon(item.icon, color: active ? Colors.white : Colors.white54, size: 20),
+        title: Text(
+          item.label,
+          style: TextStyle(
+            color: active ? Colors.white : Colors.white70,
+            fontSize: 13.5,
+            fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+          ),
+        ),
         onTap: () => context.go(item.route),
       ),
     );
