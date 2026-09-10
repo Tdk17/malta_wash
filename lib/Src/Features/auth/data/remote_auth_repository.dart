@@ -36,12 +36,20 @@ class RemoteAuthRepository implements AuthRepository {
     required String phone,
     required String email,
     required String password,
+    String? tenantSlug,
   }) async {
+    final slug = tenantSlug?.trim();
     final raw = await httpManager.request(
       Endpoints.register,
       method: HttpMethod.post,
       authenticated: false,
-      data: {'name': name.trim(), 'phone': phone.trim(), 'email': email.trim(), 'password': password},
+      data: {
+        'name': name.trim(),
+        'phone': phone.trim(),
+        'email': email.trim(),
+        'password': password,
+        if (slug != null && slug.isNotEmpty) 'tenantSlug': slug,
+      },
     );
     final session = UserSession.fromJson(_map(raw));
     if (session.token.isNotEmpty) {
