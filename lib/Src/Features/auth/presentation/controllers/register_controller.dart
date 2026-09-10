@@ -13,11 +13,18 @@ class RegisterController {
     required String phone,
     required String email,
     required String password,
+    String? tenantSlug,
   }) async {
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      return await _repository.register(name: name, phone: phone, email: email, password: password);
+      return await _repository.register(
+        name: name,
+        phone: phone,
+        email: email,
+        password: password,
+        tenantSlug: tenantSlug,
+      );
     } catch (e) {
       errorMessage.value = e.toString();
       return null;
