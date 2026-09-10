@@ -56,7 +56,7 @@ class RemoteBookingRepository implements BookingRepository {
 
   @override
   Future<List<Map<String, dynamic>>> availability({
-    required String locationId,
+    String? locationId,
     required String serviceId,
     required String vehicleId,
     required String date,
@@ -64,7 +64,7 @@ class RemoteBookingRepository implements BookingRepository {
     final raw = await _http.request(
       Endpoints.availability,
       queryParameters: {
-        'locationId': locationId,
+        if (locationId != null && locationId.isNotEmpty) 'locationId': locationId,
         'serviceId': serviceId,
         'vehicleId': vehicleId,
         'date': date,
