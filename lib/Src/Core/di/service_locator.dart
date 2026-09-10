@@ -6,6 +6,7 @@ import 'package:malta_wash/Src/Core/storage/secure_storage_service.dart';
 import 'package:malta_wash/Src/Features/auth/data/remote_auth_repository.dart';
 import 'package:malta_wash/Src/Features/auth/domain/auth_repository.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/controllers/auth_controller.dart';
+import 'package:malta_wash/Src/Features/auth/presentation/controllers/company_register_controller.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/controllers/forgot_password_controller.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/controllers/login_controller.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/controllers/register_controller.dart';
@@ -41,6 +42,7 @@ void setupDependencies() {
   sl.registerLazySingleton<BrandingController>(() => BrandingController(sl()));
   sl.registerLazySingleton<LoginController>(() => LoginController(sl()));
   sl.registerLazySingleton<RegisterController>(() => RegisterController(sl()));
+  sl.registerLazySingleton<CompanyRegisterController>(() => CompanyRegisterController(sl()));
   sl.registerLazySingleton<ForgotPasswordController>(() => ForgotPasswordController(sl()));
   sl.registerLazySingleton<VehiclesController>(() => VehiclesController(sl()));
   sl.registerFactory<BookingController>(() => BookingController(sl(), sl()));
