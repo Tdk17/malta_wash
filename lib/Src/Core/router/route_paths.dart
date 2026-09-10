@@ -2,6 +2,7 @@ abstract final class RoutePaths {
   static const home = '/';
   static const login = '/login';
   static const register = '/cadastro';
+  static const companyRegister = '/cadastro-empresa';
   static const resetPassword = '/recuperar-senha';
 
   static const client = '/cliente';
