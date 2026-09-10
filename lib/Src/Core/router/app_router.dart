@@ -16,6 +16,7 @@ import 'package:malta_wash/Src/Features/dashboard/presentation/pages/admin_dashb
 import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_commercial_config_page.dart';
 import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_directory_page.dart';
 import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_schedule_page.dart';
+import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_services_page.dart';
 import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_settings_page.dart';
 import 'package:malta_wash/Src/Features/operation/presentation/pages/operation_board_page.dart';
 import 'package:malta_wash/Src/Features/public/presentation/pages/home_page.dart';
@@ -76,6 +77,7 @@ class AppRouter {
         GoRoute(path: RoutePaths.adminOperation, builder: (_, __) => const OperationBoardPage()),
         GoRoute(path: RoutePaths.adminCustomers, builder: (_, __) => const AdminDirectoryPage()),
         GoRoute(path: RoutePaths.adminVehicles, builder: (_, __) => const AdminDirectoryPage(vehicleFocus: true)),
+        GoRoute(path: RoutePaths.adminServices, builder: (_, __) => const AdminServicesPage()),
         GoRoute(path: RoutePaths.adminPlans, builder: (_, __) => const AdminCommercialConfigPage(mode: CommercialConfigMode.plans)),
         GoRoute(path: RoutePaths.adminLoyalty, builder: (_, __) => const AdminCommercialConfigPage(mode: CommercialConfigMode.loyalty)),
         GoRoute(path: RoutePaths.adminSettings, builder: (_, __) => const AdminSettingsPage()),
