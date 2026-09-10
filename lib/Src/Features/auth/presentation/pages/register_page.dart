@@ -39,7 +39,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return AuthLayout(
       eyebrow: 'Cadastro de cliente',
       title: 'Sua próxima lavagem começa antes de você chegar.',
-      description: 'Crie sua conta para cadastrar veículos, escolher serviços, reservar horários e acompanhar cada atendimento.',
+      description: 'Crie sua conta para cadastrar seu veículo, agendar uma lavagem e acompanhar o atendimento.',
       child: Form(
         key: formKey,
         child: Column(
@@ -51,7 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Cadastro destinado aos clientes da Clinicar.',
+              'Cadastro de cliente Malta Wash.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF7B8492)),
             ),
             const SizedBox(height: 22),
@@ -59,10 +59,7 @@ class _RegisterPageState extends State<RegisterPage> {
               controller: name,
               textCapitalization: TextCapitalization.words,
               autofillHints: const [AutofillHints.name],
-              decoration: const InputDecoration(
-                labelText: 'Nome completo',
-                prefixIcon: Icon(Icons.person_outline_rounded),
-              ),
+              decoration: const InputDecoration(labelText: 'Nome completo', prefixIcon: Icon(Icons.person_outline_rounded)),
               validator: (v) => (v == null || v.trim().length < 3) ? 'Informe seu nome completo.' : null,
             ),
             const SizedBox(height: 14),
@@ -70,11 +67,7 @@ class _RegisterPageState extends State<RegisterPage> {
               controller: phone,
               keyboardType: TextInputType.phone,
               autofillHints: const [AutofillHints.telephoneNumber],
-              decoration: const InputDecoration(
-                labelText: 'Telefone / WhatsApp',
-                hintText: '(47) 99999-9999',
-                prefixIcon: Icon(Icons.phone_outlined),
-              ),
+              decoration: const InputDecoration(labelText: 'Telefone / WhatsApp', hintText: '(47) 99999-9999', prefixIcon: Icon(Icons.phone_outlined)),
               validator: (v) => (v == null || v.replaceAll(RegExp(r'\D'), '').length < 10) ? 'Informe um telefone válido.' : null,
             ),
             const SizedBox(height: 14),
@@ -82,11 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
               controller: email,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
-              decoration: const InputDecoration(
-                labelText: 'E-mail',
-                hintText: 'voce@email.com',
-                prefixIcon: Icon(Icons.mail_outline_rounded),
-              ),
+              decoration: const InputDecoration(labelText: 'E-mail', hintText: 'voce@email.com', prefixIcon: Icon(Icons.mail_outline_rounded)),
               validator: (v) => (v == null || !v.contains('@')) ? 'Informe um e-mail válido.' : null,
             ),
             const SizedBox(height: 14),
@@ -148,21 +137,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       width: double.infinity,
                       margin: const EdgeInsets.only(bottom: 14),
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.errorContainer.withOpacity(.35),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.errorContainer.withOpacity(.35), borderRadius: BorderRadius.circular(12)),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(Icons.error_outline_rounded, size: 18, color: Theme.of(context).colorScheme.error),
                           const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              controller.errorMessage.value!,
-                              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12.5, height: 1.35),
-                            ),
-                          ),
+                          Expanded(child: Text(controller.errorMessage.value!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12.5, height: 1.35))),
                         ],
                       ),
                     ),
@@ -206,7 +187,7 @@ class _RegisterPageState extends State<RegisterPage> {
               child: TextButton.icon(
                 onPressed: () => context.go('${RoutePaths.login}?area=empresa'),
                 icon: const Icon(Icons.storefront_outlined, size: 18),
-                label: const Text('Sou da empresa / equipe'),
+                label: const Text('Acessar área da empresa'),
               ),
             ),
           ],
