@@ -255,6 +255,7 @@ class HttpManager {
 
   static const Map<String, String> _directFunctions = <String, String>{
     'POST /v1/auth/register': 'v1-auth-register',
+    'POST /v1/auth/register-company': 'v1-auth-register-company',
     'POST /v1/auth/login': 'v1-auth-login',
     'POST /v1/auth/logout': 'v1-auth-logout',
     'GET /v1/auth/me': 'v1-auth-me',
