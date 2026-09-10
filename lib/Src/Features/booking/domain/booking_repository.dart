@@ -3,7 +3,7 @@ abstract interface class BookingRepository {
   Future<List<Map<String, dynamic>>> services();
   Future<List<Map<String, dynamic>>> addons();
   Future<List<Map<String, dynamic>>> availability({
-    required String locationId,
+    String? locationId,
     required String serviceId,
     required String vehicleId,
     required String date,
