@@ -31,13 +31,7 @@ class AuthLayout extends StatelessWidget {
             return Row(
               children: [
                 Expanded(flex: 11, child: _BrandPanel(title: title, description: description)),
-                Expanded(
-                  flex: 9,
-                  child: _FormSide(
-                    eyebrow: eyebrow,
-                    child: child,
-                  ),
-                ),
+                Expanded(flex: 9, child: _FormSide(eyebrow: eyebrow, child: child)),
               ],
             );
           }
@@ -62,7 +56,6 @@ class AuthLayout extends StatelessWidget {
 
 class _BrandPanel extends StatelessWidget {
   const _BrandPanel({required this.title, required this.description});
-
   final String title;
   final String description;
 
@@ -97,8 +90,8 @@ class _BrandPanel extends StatelessWidget {
                       border: Border.all(color: Colors.white.withOpacity(.09)),
                     ),
                     child: const Text(
-                      'EXPERIÊNCIA DIGITAL PARA O SEU CARRO',
-                      style: TextStyle(color: Color(0xFFFFA15F), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .9),
+                      'MALTA WASH',
+                      style: TextStyle(color: Color(0xFFFFA15F), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.2),
                     ),
                   ),
                   const SizedBox(height: 22),
@@ -117,22 +110,12 @@ class _BrandPanel extends StatelessWidget {
                       style: TextStyle(color: Colors.white.withOpacity(.68), fontSize: 17, height: 1.55),
                     ),
                   ),
-                  const SizedBox(height: 34),
-                  const Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _FeaturePill(icon: Icons.calendar_month_rounded, label: 'Agendamento online'),
-                      _FeaturePill(icon: Icons.directions_car_filled_rounded, label: 'Veículos e histórico'),
-                      _FeaturePill(icon: Icons.auto_awesome_rounded, label: 'Experiência completa'),
-                    ],
-                  ),
                   const Spacer(),
                   Row(
                     children: [
                       Container(width: 30, height: 3, decoration: BoxDecoration(color: AuthLayout._orange, borderRadius: BorderRadius.circular(999))),
                       const SizedBox(width: 10),
-                      Text('Clinicar  •  powered by Malta Wash', style: TextStyle(color: Colors.white.withOpacity(.42), fontSize: 12)),
+                      Text('Malta Wash', style: TextStyle(color: Colors.white.withOpacity(.42), fontSize: 12, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ],
@@ -147,7 +130,6 @@ class _BrandPanel extends StatelessWidget {
 
 class _FormSide extends StatelessWidget {
   const _FormSide({required this.eyebrow, required this.child});
-
   final String eyebrow;
   final Widget child;
 
@@ -167,7 +149,6 @@ class _FormSide extends StatelessWidget {
 
 class _FormCard extends StatelessWidget {
   const _FormCard({required this.eyebrow, required this.child});
-
   final String eyebrow;
   final Widget child;
 
@@ -181,9 +162,7 @@ class _FormCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: const Color(0xFFE8EBF0)),
-        boxShadow: const [
-          BoxShadow(color: Color(0x120F172A), blurRadius: 42, offset: Offset(0, 18)),
-        ],
+        boxShadow: const [BoxShadow(color: Color(0x120F172A), blurRadius: 42, offset: Offset(0, 18))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,14 +173,7 @@ class _FormCard extends StatelessWidget {
               const BrandLogo(size: 48),
               const SizedBox(width: 12),
               const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('CLINICAR', style: TextStyle(color: AuthLayout._ink, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: .6)),
-                    SizedBox(height: 2),
-                    Text('Malta Wash', style: TextStyle(color: Color(0xFF7B8492), fontSize: 12)),
-                  ],
-                ),
+                child: Text('Malta Wash', style: TextStyle(color: AuthLayout._ink, fontWeight: FontWeight.w900, fontSize: 17, letterSpacing: -.2)),
               ),
               TextButton.icon(
                 onPressed: () => context.go(RoutePaths.home),
@@ -225,7 +197,6 @@ class _FormCard extends StatelessWidget {
 
 class _MobileHeader extends StatelessWidget {
   const _MobileHeader({required this.title, required this.description});
-
   final String title;
   final String description;
 
@@ -268,41 +239,9 @@ class _BrandHeader extends StatelessWidget {
           children: [
             BrandLogo(size: 46),
             SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Clinicar', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                Text('Gestão & Agendamento Automotivo', style: TextStyle(color: Colors.white54, fontSize: 11)),
-              ],
-            ),
+            Text('Malta Wash', style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FeaturePill extends StatelessWidget {
-  const _FeaturePill({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(.06),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(.08)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.check_circle_rounded, size: 18, color: AuthLayout._orange),
-          const SizedBox(width: 8),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
-        ],
       ),
     );
   }
