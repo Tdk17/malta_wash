@@ -1,6 +1,6 @@
 class TenantBranding {
   const TenantBranding({
-    this.companyName = 'Clinicar',
+    this.companyName = 'Malta Wash',
     this.logoUrl,
     this.primaryColor,
   });
@@ -17,8 +17,8 @@ class TenantBranding {
         ? tenant['branding'] as Map<String, dynamic>
         : <String, dynamic>{};
     return TenantBranding(
-      companyName: (tenant['name'] ?? branding['companyName'] ?? 'Clinicar').toString(),
-      logoUrl: branding['logoUrl']?.toString(),
+      companyName: 'Malta Wash',
+      logoUrl: null,
       primaryColor: branding['primaryColor']?.toString(),
     );
   }
