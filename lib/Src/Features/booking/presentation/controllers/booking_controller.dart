@@ -11,36 +11,32 @@ class BookingController {
   final isLoading = signal(false);
   final errorMessage = signal<String?>(null);
   final step = signal(0);
-  final locations = signal<List<Map<String, dynamic>>>(const []);
   final vehicles = signal<List<Map<String, dynamic>>>(const []);
   final services = signal<List<Map<String, dynamic>>>(const []);
   final slots = signal<List<Map<String, dynamic>>>(const []);
 
-  final locationId = signal<String?>(null);
   final vehicleId = signal<String?>(null);
   final serviceId = signal<String?>(null);
   final date = signal<DateTime?>(null);
   final startAt = signal<String?>(null);
+
+  String? _legacyLocationId;
 
   Future<void> bootstrap() async {
     isLoading.value = true;
     errorMessage.value = null;
     try {
       final results = await Future.wait([
-        _booking.locations(),
         _booking.services(),
         _vehicles.list(),
+        _loadLegacyDefaultLocation(),
       ]);
 
-      locations.value = (results[0] as List<Map<String, dynamic>>)
+      services.value = (results[0] as List<Map<String, dynamic>>)
           .where(_hasUsableId)
           .where((item) => item['active'] != false)
           .toList();
-      services.value = (results[1] as List<Map<String, dynamic>>)
-          .where(_hasUsableId)
-          .where((item) => item['active'] != false)
-          .toList();
-      vehicles.value = (results[2] as List)
+      vehicles.value = (results[1] as List)
           .map((v) => <String, dynamic>{
                 'id': v.id,
                 'plate': v.plate,
@@ -51,15 +47,8 @@ class BookingController {
           .where(_hasUsableId)
           .toList();
 
-      if (locations.value.length == 1) {
-        locationId.value = _id(locations.value.first);
-      }
-      if (vehicles.value.length == 1) {
-        vehicleId.value = _id(vehicles.value.first);
-      }
-      if (services.value.length == 1) {
-        serviceId.value = _id(services.value.first);
-      }
+      if (vehicles.value.length == 1) vehicleId.value = _id(vehicles.value.first);
+      if (services.value.length == 1) serviceId.value = _id(services.value.first);
     } catch (e) {
       errorMessage.value = e.toString();
     } finally {
@@ -67,19 +56,27 @@ class BookingController {
     }
   }
 
-  Future<void> loadSlots() async {
-    if (locationId.value == null ||
-        vehicleId.value == null ||
-        serviceId.value == null ||
-        date.value == null) {
-      return;
+  Future<void> _loadLegacyDefaultLocation() async {
+    try {
+      final items = (await _booking.locations())
+          .where(_hasUsableId)
+          .where((item) => item['active'] != false)
+          .toList();
+      if (items.isNotEmpty) _legacyLocationId = _id(items.first);
+    } catch (_) {
+      // Compatibilidade temporária: o MVP não depende mais de unidade.
+      _legacyLocationId = null;
     }
+  }
+
+  Future<void> loadSlots() async {
+    if (vehicleId.value == null || serviceId.value == null || date.value == null) return;
     isLoading.value = true;
     errorMessage.value = null;
     startAt.value = null;
     try {
       slots.value = await _booking.availability(
-        locationId: locationId.value!,
+        locationId: _legacyLocationId,
         serviceId: serviceId.value!,
         vehicleId: vehicleId.value!,
         date: DateFormat('yyyy-MM-dd').format(date.value!),
@@ -93,10 +90,7 @@ class BookingController {
   }
 
   Future<Map<String, dynamic>?> confirm() async {
-    if (locationId.value == null ||
-        vehicleId.value == null ||
-        serviceId.value == null ||
-        startAt.value == null) {
+    if (vehicleId.value == null || serviceId.value == null || startAt.value == null) {
       errorMessage.value = 'Preencha todas as etapas obrigatórias.';
       return null;
     }
@@ -105,13 +99,10 @@ class BookingController {
     errorMessage.value = null;
     try {
       return await _booking.createAppointment({
-        'locationId': locationId.value,
+        if (_legacyLocationId != null) 'locationId': _legacyLocationId,
         'vehicleId': vehicleId.value,
         'serviceId': serviceId.value,
-        'addonIds': const <String>[],
         'startAt': startAt.value,
-        'paymentMode': 'ON_SITE',
-        'couponCode': null,
       });
     } catch (e) {
       errorMessage.value = e.toString();
