@@ -1,0 +1,6 @@
+{
+  "APP_ENV": "development",
+  "PARSE_SERVER_URL": "https://parseapi.back4app.com",
+  "PARSE_APPLICATION_ID": "SEU_APPLICATION_ID",
+  "PARSE_CLIENT_KEY": "SUA_CLIENT_KEY"
+}
