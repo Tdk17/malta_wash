@@ -3,29 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:malta_wash/Src/Core/di/service_locator.dart';
 import 'package:malta_wash/Src/Core/router/route_paths.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/controllers/auth_controller.dart';
-import 'package:malta_wash/Src/Features/branding/presentation/controllers/branding_controller.dart';
 import 'package:malta_wash/Src/Shared/widgets/brand_logo.dart';
-import 'package:signals/signals_flutter.dart';
 
-class AppShell extends StatefulWidget {
+class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child, required this.mode});
   final Widget child;
   final ShellMode mode;
-
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
-
-enum ShellMode { client, admin, superAdmin }
-
-class _AppShellState extends State<AppShell> {
-  late final BrandingController branding = sl();
-
-  @override
-  void initState() {
-    super.initState();
-    branding.load();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,41 +22,38 @@ class _AppShellState extends State<AppShell> {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           titleSpacing: 8,
-          title: Watch((_) => Row(children: [
-                BrandLogo(size: 34, logoUrl: branding.branding.value.logoUrl),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    branding.branding.value.companyName,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
-                  ),
-                ),
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle),
-                ),
-              ])),
+          title: const Row(children: [
+            BrandLogo(size: 34),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Malta Wash',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+              ),
+            ),
+          ]),
         ),
         drawer: Drawer(
           width: 286,
           backgroundColor: Colors.transparent,
-          child: SafeArea(child: _Navigation(mode: widget.mode)),
+          child: SafeArea(child: _Navigation(mode: mode)),
         ),
-        body: widget.child,
+        body: child,
       );
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F8),
       body: Row(children: [
-        SizedBox(width: 258, child: _Navigation(mode: widget.mode)),
-        Expanded(child: widget.child),
+        SizedBox(width: 258, child: _Navigation(mode: mode)),
+        Expanded(child: child),
       ]),
     );
   }
 }
+
+enum ShellMode { client, admin, superAdmin }
 
 class _Navigation extends StatelessWidget {
   const _Navigation({required this.mode});
@@ -81,7 +61,6 @@ class _Navigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final branding = sl<BrandingController>();
     final items = switch (mode) {
       ShellMode.client => _clientItems,
       ShellMode.admin => _adminItems,
@@ -91,9 +70,9 @@ class _Navigation extends StatelessWidget {
     return ClipRect(
       child: Stack(
         children: [
-          Positioned.fill(
+          const Positioned.fill(
             child: DecoratedBox(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -132,46 +111,19 @@ class _Navigation extends StatelessWidget {
             ),
           ),
           Column(children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
-              child: Watch((_) => Row(children: [
-                    Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.05),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white.withOpacity(.08)),
-                      ),
-                      child: BrandLogo(size: 40, logoUrl: branding.branding.value.logoUrl),
-                    ),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(
-                          branding.branding.value.companyName,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15.5),
-                        ),
-                        const SizedBox(height: 3),
-                        Row(children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(color: Color(0xFFFF6A00), shape: BoxShape.circle),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            mode == ShellMode.client
-                                ? 'Portal do cliente'
-                                : mode == ShellMode.admin
-                                    ? 'Painel da empresa'
-                                    : 'Administração Malta Wash',
-                            style: const TextStyle(color: Color(0xFF8D98A8), fontSize: 10.5, fontWeight: FontWeight.w600),
-                          ),
-                        ]),
-                      ]),
-                    ),
-                  ])),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(18, 22, 18, 18),
+              child: Row(children: [
+                BrandLogo(size: 44),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Malta Wash',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17),
+                  ),
+                ),
+              ]),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -305,7 +257,7 @@ class _NavTile extends StatelessWidget {
                   style: TextStyle(
                     color: active ? Colors.white : const Color(0xFFB5BDC8),
                     fontSize: 13,
-                    fontWeight: active ? FontWeight.w900 : FontWeight.w650,
+                    fontWeight: active ? FontWeight.w900 : FontWeight.w600,
                   ),
                 ),
               ),
