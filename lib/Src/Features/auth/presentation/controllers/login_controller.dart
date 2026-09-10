@@ -20,4 +20,12 @@ class LoginController {
       isLoading.value = false;
     }
   }
+
+  Future<void> logoutCurrentSession() async {
+    try {
+      await _repository.logout();
+    } catch (_) {
+      // O repository sempre limpa a sessão local no finally do logout.
+    }
+  }
 }
