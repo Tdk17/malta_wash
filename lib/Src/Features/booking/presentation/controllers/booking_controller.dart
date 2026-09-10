@@ -14,17 +14,13 @@ class BookingController {
   final locations = signal<List<Map<String, dynamic>>>(const []);
   final vehicles = signal<List<Map<String, dynamic>>>(const []);
   final services = signal<List<Map<String, dynamic>>>(const []);
-  final addons = signal<List<Map<String, dynamic>>>(const []);
   final slots = signal<List<Map<String, dynamic>>>(const []);
 
   final locationId = signal<String?>(null);
   final vehicleId = signal<String?>(null);
   final serviceId = signal<String?>(null);
-  final addonIds = signal<List<String>>(const []);
   final date = signal<DateTime?>(null);
   final startAt = signal<String?>(null);
-  final paymentMode = signal('ON_SITE');
-  final couponCode = signal<String?>(null);
 
   Future<void> bootstrap() async {
     isLoading.value = true;
@@ -33,18 +29,37 @@ class BookingController {
       final results = await Future.wait([
         _booking.locations(),
         _booking.services(),
-        _booking.addons(),
         _vehicles.list(),
       ]);
-      locations.value = results[0] as List<Map<String, dynamic>>;
-      services.value = results[1] as List<Map<String, dynamic>>;
-      addons.value = results[2] as List<Map<String, dynamic>>;
-      vehicles.value = (results[3] as List).map((v) => <String, dynamic>{
-            'id': v.id,
-            'plate': v.plate,
-            'brand': v.brand,
-            'model': v.model,
-          }).toList();
+
+      locations.value = (results[0] as List<Map<String, dynamic>>)
+          .where(_hasUsableId)
+          .where((item) => item['active'] != false)
+          .toList();
+      services.value = (results[1] as List<Map<String, dynamic>>)
+          .where(_hasUsableId)
+          .where((item) => item['active'] != false)
+          .toList();
+      vehicles.value = (results[2] as List)
+          .map((v) => <String, dynamic>{
+                'id': v.id,
+                'plate': v.plate,
+                'model': v.model,
+                'color': v.color,
+                'category': v.category,
+              })
+          .where(_hasUsableId)
+          .toList();
+
+      if (locations.value.length == 1) {
+        locationId.value = _id(locations.value.first);
+      }
+      if (vehicles.value.length == 1) {
+        vehicleId.value = _id(vehicles.value.first);
+      }
+      if (services.value.length == 1) {
+        serviceId.value = _id(services.value.first);
+      }
     } catch (e) {
       errorMessage.value = e.toString();
     } finally {
@@ -53,9 +68,15 @@ class BookingController {
   }
 
   Future<void> loadSlots() async {
-    if (locationId.value == null || vehicleId.value == null || serviceId.value == null || date.value == null) return;
+    if (locationId.value == null ||
+        vehicleId.value == null ||
+        serviceId.value == null ||
+        date.value == null) {
+      return;
+    }
     isLoading.value = true;
     errorMessage.value = null;
+    startAt.value = null;
     try {
       slots.value = await _booking.availability(
         locationId: locationId.value!,
@@ -65,16 +86,21 @@ class BookingController {
       );
     } catch (e) {
       errorMessage.value = e.toString();
+      slots.value = const [];
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<Map<String, dynamic>?> confirm() async {
-    if (locationId.value == null || vehicleId.value == null || serviceId.value == null || startAt.value == null) {
+    if (locationId.value == null ||
+        vehicleId.value == null ||
+        serviceId.value == null ||
+        startAt.value == null) {
       errorMessage.value = 'Preencha todas as etapas obrigatórias.';
       return null;
     }
+
     isLoading.value = true;
     errorMessage.value = null;
     try {
@@ -82,10 +108,10 @@ class BookingController {
         'locationId': locationId.value,
         'vehicleId': vehicleId.value,
         'serviceId': serviceId.value,
-        'addonIds': addonIds.value,
+        'addonIds': const <String>[],
         'startAt': startAt.value,
-        'paymentMode': paymentMode.value,
-        'couponCode': couponCode.value,
+        'paymentMode': 'ON_SITE',
+        'couponCode': null,
       });
     } catch (e) {
       errorMessage.value = e.toString();
@@ -94,4 +120,9 @@ class BookingController {
       isLoading.value = false;
     }
   }
+
+  bool _hasUsableId(Map<String, dynamic> item) => _id(item).isNotEmpty;
+
+  String _id(Map<String, dynamic> item) =>
+      (item['id'] ?? item['objectId'] ?? '').toString().trim();
 }
