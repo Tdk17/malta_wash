@@ -25,20 +25,10 @@ class AppShell extends StatelessWidget {
           title: const Row(children: [
             BrandLogo(size: 34),
             SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Malta Wash',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
-              ),
-            ),
+            Expanded(child: Text('Malta Wash', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900))),
           ]),
         ),
-        drawer: Drawer(
-          width: 286,
-          backgroundColor: Colors.transparent,
-          child: SafeArea(child: _Navigation(mode: mode)),
-        ),
+        drawer: Drawer(width: 286, backgroundColor: Colors.transparent, child: SafeArea(child: _Navigation(mode: mode))),
         body: child,
       );
     }
@@ -70,88 +60,30 @@ class _Navigation extends StatelessWidget {
     return ClipRect(
       child: Stack(
         children: [
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF11161E), Color(0xFF080B10)],
-                ),
-              ),
-            ),
-          ),
+          const Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF11161E), Color(0xFF080B10)])))),
           const Positioned.fill(child: CustomPaint(painter: _GridPainter())),
-          Positioned(
-            top: -90,
-            right: -80,
-            child: IgnorePointer(
-              child: Container(
-                width: 240,
-                height: 240,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFFF6A00).withOpacity(.10),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 80,
-            left: -120,
-            child: IgnorePointer(
-              child: Container(
-                width: 260,
-                height: 260,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF2563EB).withOpacity(.08),
-                ),
-              ),
-            ),
-          ),
+          Positioned(top: -90, right: -80, child: IgnorePointer(child: Container(width: 240, height: 240, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFFF6A00).withOpacity(.10))))),
+          Positioned(bottom: 80, left: -120, child: IgnorePointer(child: Container(width: 260, height: 260, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF2563EB).withOpacity(.08))))),
           Column(children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(18, 22, 18, 18),
               child: Row(children: [
                 BrandLogo(size: 44),
                 SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Malta Wash',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17),
-                  ),
-                ),
+                Expanded(child: Text('Malta Wash', overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17))),
               ]),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Container(height: 1, color: Colors.white.withOpacity(.07)),
-            ),
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: Container(height: 1, color: Colors.white.withOpacity(.07))),
             const SizedBox(height: 15),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  mode == ShellMode.client ? 'NAVEGAÇÃO' : 'OPERAÇÃO',
-                  style: const TextStyle(
-                    color: Color(0xFF606C7B),
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.25,
-                  ),
-                ),
+                child: Text(mode == ShellMode.client ? 'NAVEGAÇÃO' : 'OPERAÇÃO', style: const TextStyle(color: Color(0xFF606C7B), fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 1.25)),
               ),
             ),
             const SizedBox(height: 9),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                children: items.map((item) => _NavTile(item: item)).toList(),
-              ),
-            ),
+            Expanded(child: ListView(padding: const EdgeInsets.symmetric(horizontal: 10), children: items.map((item) => _NavTile(item: item)).toList())),
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 14),
               child: InkWell(
@@ -162,11 +94,7 @@ class _Navigation extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(.06)),
-                    color: Colors.white.withOpacity(.025),
-                  ),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withOpacity(.06)), color: Colors.white.withOpacity(.025)),
                   child: const Row(children: [
                     Icon(Icons.logout_rounded, color: Color(0xFF8D98A8), size: 19),
                     SizedBox(width: 11),
@@ -197,6 +125,7 @@ class _Navigation extends StatelessWidget {
     _NavItem('Atendimentos', Icons.local_car_wash_rounded, RoutePaths.adminOperation),
     _NavItem('Clientes', Icons.people_alt_rounded, RoutePaths.adminCustomers),
     _NavItem('Veículos', Icons.directions_car_filled_rounded, RoutePaths.adminVehicles),
+    _NavItem('Serviços', Icons.cleaning_services_rounded, RoutePaths.adminServices),
     _NavItem('Planos', Icons.workspace_premium_rounded, RoutePaths.adminPlans),
     _NavItem('Fidelidade', Icons.loyalty_rounded, RoutePaths.adminLoyalty),
     _NavItem('Configurações', Icons.settings_rounded, RoutePaths.adminSettings),
@@ -231,36 +160,15 @@ class _NavTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              gradient: active
-                  ? const LinearGradient(colors: [Color(0xFFFF6A00), Color(0xFFFF8734)])
-                  : null,
+              gradient: active ? const LinearGradient(colors: [Color(0xFFFF6A00), Color(0xFFFF8734)]) : null,
               color: active ? null : Colors.transparent,
               border: Border.all(color: active ? const Color(0xFFFFA362) : Colors.transparent),
-              boxShadow: active
-                  ? const [BoxShadow(color: Color(0x33FF6A00), blurRadius: 18, offset: Offset(0, 7))]
-                  : null,
+              boxShadow: active ? const [BoxShadow(color: Color(0x33FF6A00), blurRadius: 18, offset: Offset(0, 7))] : null,
             ),
             child: Row(children: [
-              Container(
-                width: 31,
-                height: 31,
-                decoration: BoxDecoration(
-                  color: active ? Colors.white.withOpacity(.15) : Colors.white.withOpacity(.04),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(item.icon, color: active ? Colors.white : const Color(0xFF8995A5), size: 18),
-              ),
+              Container(width: 31, height: 31, decoration: BoxDecoration(color: active ? Colors.white.withOpacity(.15) : Colors.white.withOpacity(.04), borderRadius: BorderRadius.circular(10)), child: Icon(item.icon, color: active ? Colors.white : const Color(0xFF8995A5), size: 18)),
               const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  item.label,
-                  style: TextStyle(
-                    color: active ? Colors.white : const Color(0xFFB5BDC8),
-                    fontSize: 13,
-                    fontWeight: active ? FontWeight.w900 : FontWeight.w600,
-                  ),
-                ),
-              ),
+              Expanded(child: Text(item.label, style: TextStyle(color: active ? Colors.white : const Color(0xFFB5BDC8), fontSize: 13, fontWeight: active ? FontWeight.w900 : FontWeight.w600))),
               if (active) const Icon(Icons.chevron_right_rounded, color: Colors.white70, size: 18),
             ]),
           ),
@@ -275,9 +183,7 @@ class _GridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF334155).withOpacity(.13)
-      ..strokeWidth = .6;
+    final paint = Paint()..color = const Color(0xFF334155).withOpacity(.13)..strokeWidth = .6;
     const gap = 28.0;
     for (double x = 0; x <= size.width; x += gap) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
