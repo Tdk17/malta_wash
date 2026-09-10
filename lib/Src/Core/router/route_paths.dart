@@ -1,0 +1,49 @@
+abstract final class RoutePaths {
+  static const home = '/';
+  static const login = '/login';
+  static const register = '/cadastro';
+  static const resetPassword = '/recuperar-senha';
+
+  static const client = '/cliente';
+  static const clientVehicles = '/cliente/veiculos';
+  static const clientBooking = '/cliente/agendar';
+  static const clientAppointments = '/cliente/agendamentos';
+  static const clientPlans = '/cliente/planos';
+  static const clientPackages = '/cliente/pacotes';
+  static const clientBenefits = '/cliente/beneficios';
+  static const clientPayments = '/cliente/pagamentos';
+  static const clientNotifications = '/cliente/notificacoes';
+  static const clientProfile = '/cliente/perfil';
+  static const clientSupport = '/cliente/suporte';
+
+  static const admin = '/admin';
+  static const adminCalendar = '/admin/agenda';
+  static const adminOperation = '/admin/operacao';
+  static const adminAppointments = '/admin/agendamentos';
+  static const adminCustomers = '/admin/clientes';
+  static const adminVehicles = '/admin/veiculos';
+  static const adminWorkOrders = '/admin/ordens-servico';
+  static const adminServices = '/admin/servicos';
+  static const adminAddons = '/admin/adicionais';
+  static const adminPlans = '/admin/planos';
+  static const adminSubscriptions = '/admin/assinaturas';
+  static const adminPackages = '/admin/pacotes';
+  static const adminCoupons = '/admin/cupons';
+  static const adminLocations = '/admin/unidades';
+  static const adminTeam = '/admin/equipe';
+  static const adminSchedules = '/admin/escalas-bloqueios';
+  static const adminLoyalty = '/admin/fidelidade';
+  static const adminFinance = '/admin/financeiro';
+  static const adminReports = '/admin/relatorios';
+  static const adminReviews = '/admin/avaliacoes';
+  static const adminMarketing = '/admin/marketing';
+  static const adminSettings = '/admin/configuracoes';
+  static const adminUsers = '/admin/usuarios';
+
+  static const superAdmin = '/super-admin';
+  static const superAdminTenants = '/super-admin/empresas';
+  static const superAdminPlans = '/super-admin/planos';
+  static const superAdminBilling = '/super-admin/cobrancas';
+  static const superAdminFlags = '/super-admin/feature-flags';
+  static const superAdminAudit = '/super-admin/auditoria';
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Malta Wash — Gestão & Agendamento Automotivo",
+  "short_name": "Malta Wash",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0B0F14",
+  "theme_color": "#FF6A00",
+  "description": "Gestão e agendamento automotivo.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false
+}
