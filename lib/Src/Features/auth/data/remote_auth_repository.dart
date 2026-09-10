@@ -59,6 +59,37 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<UserSession> registerCompany({
+    required String companyName,
+    required String ownerName,
+    required String phone,
+    required String email,
+    required String password,
+  }) async {
+    final raw = await httpManager.request(
+      Endpoints.registerCompany,
+      method: HttpMethod.post,
+      authenticated: false,
+      data: {
+        'companyName': companyName.trim(),
+        'ownerName': ownerName.trim(),
+        'phone': phone.trim(),
+        'email': email.trim(),
+        'password': password,
+        'timezone': 'America/Sao_Paulo',
+        'planCode': 'STARTER',
+      },
+    );
+
+    final session = UserSession.fromJson(_map(raw));
+    if (session.token.isEmpty) {
+      throw const FormatException('Token ausente após o cadastro da empresa.');
+    }
+    await sessionStorage.save(token: session.token, role: session.role, userId: session.userId);
+    return session;
+  }
+
+  @override
   Future<Map<String, dynamic>> me() async => _map(await httpManager.request(Endpoints.me));
 
   @override
