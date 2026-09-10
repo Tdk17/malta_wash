@@ -38,8 +38,8 @@ class _LoginPageState extends State<LoginPage> {
           ? 'A operação da sua lavação em um único painel.'
           : 'Agende, acompanhe e cuide do seu carro com facilidade.',
       description: companyArea
-          ? 'Acesse agenda, clientes, ordens de serviço, equipe, financeiro e indicadores do negócio.'
-          : 'Entre para gerenciar veículos, agendamentos, planos, pagamentos e benefícios da Clinicar.',
+          ? 'Acesse a operação da sua empresa pelo Malta Wash.'
+          : 'Entre para agendar, acompanhar seu veículo, consultar seu plano e gerenciar seu perfil.',
       child: Form(
         key: formKey,
         child: Column(
@@ -52,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 8),
             Text(
               companyArea
-                  ? 'Use a conta vinculada à equipe ou administração.'
+                  ? 'Use a conta de administração da empresa.'
                   : 'Use seus dados para acessar sua conta.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF7B8492)),
             ),
@@ -269,7 +269,7 @@ class _AreaSelector extends StatelessWidget {
             child: _AreaButton(
               selected: companyArea,
               icon: Icons.storefront_outlined,
-              label: 'Empresa / Equipe',
+              label: 'Empresa',
               onTap: () => onChanged(true),
             ),
           ),
