@@ -160,21 +160,40 @@ class _LoginPageState extends State<LoginPage> {
             else
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(15),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF7F1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFFFE2CC)),
                 ),
-                child: const Row(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.business_center_outlined, color: Color(0xFFFF6A00), size: 20),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Acesso reservado à administração, gerência, atendimento e equipe operacional da empresa.',
-                        style: TextStyle(fontSize: 12.5, height: 1.4, color: Color(0xFF6B4A33)),
+                    const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.business_center_outlined, color: Color(0xFFFF6A00), size: 20),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Ainda não possui uma empresa cadastrada? Crie a empresa e a conta do administrador primeiro.',
+                            style: TextStyle(fontSize: 12.5, height: 1.4, color: Color(0xFF6B4A33)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go(RoutePaths.companyRegister),
+                        icon: const Icon(Icons.add_business_rounded),
+                        label: const Text('Cadastrar minha empresa'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFFF6A00),
+                          side: const BorderSide(color: Color(0xFFFFC49A)),
+                          minimumSize: const Size(0, 46),
+                        ),
                       ),
                     ),
                   ],
