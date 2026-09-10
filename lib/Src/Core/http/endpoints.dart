@@ -1,5 +1,6 @@
 abstract final class Endpoints {
   static const register = '/v1/auth/register';
+  static const registerCompany = '/v1/auth/register-company';
   static const login = '/v1/auth/login';
   static const logout = '/v1/auth/logout';
   static const me = '/v1/auth/me';
