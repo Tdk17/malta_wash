@@ -106,7 +106,7 @@ class _Hero extends StatelessWidget {
                     children: [
                       Expanded(flex: 12, child: copy),
                       const SizedBox(width: 70),
-                      const Expanded(flex: 8, child: visual),
+                      Expanded(flex: 8, child: visual),
                     ],
                   );
                 }
