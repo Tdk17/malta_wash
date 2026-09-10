@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:malta_wash/Src/Core/auth/session_storage.dart';
 import 'package:malta_wash/Src/Core/http/endpoints.dart';
 import 'package:malta_wash/Src/Core/router/route_paths.dart';
+import 'package:malta_wash/Src/Features/auth/presentation/pages/company_register_page.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/pages/login_page.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/pages/register_page.dart';
@@ -29,6 +30,7 @@ class AppRouter {
         RoutePaths.home,
         RoutePaths.login,
         RoutePaths.register,
+        RoutePaths.companyRegister,
         RoutePaths.resetPassword,
       };
       final hasSession = await _sessionStorage.hasSession();
@@ -67,6 +69,10 @@ class AppRouter {
       GoRoute(
         path: RoutePaths.register,
         builder: (_, state) => RegisterPage(tenantSlug: state.uri.queryParameters['tenant']),
+      ),
+      GoRoute(
+        path: RoutePaths.companyRegister,
+        builder: (_, __) => const CompanyRegisterPage(),
       ),
       GoRoute(path: RoutePaths.resetPassword, builder: (_, __) => const ForgotPasswordPage()),
 
