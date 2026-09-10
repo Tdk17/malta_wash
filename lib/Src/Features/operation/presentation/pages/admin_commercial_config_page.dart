@@ -161,7 +161,7 @@ class _AdminCommercialConfigPageState extends State<AdminCommercialConfigPage> {
             const SizedBox(height: 12),
             _field(_description, 'Descrição', 'Obrigatório', maxLines: 3),
             const SizedBox(height: 12),
-            _field(_value, _plans ? 'Valor mensal (R$)' : 'Pontos por compra', 'Informe um valor válido', numeric: true),
+            _field(_value, _plans ? 'Valor mensal (R\$)' : 'Pontos por compra', 'Informe um valor válido', numeric: true),
             const SizedBox(height: 12),
             _field(_benefit, _plans ? 'Benefícios do plano' : 'Recompensa', 'Obrigatório', maxLines: 3),
             if (_plans) ...[
