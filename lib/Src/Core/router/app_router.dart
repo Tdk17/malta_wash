@@ -19,7 +19,7 @@ import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_sched
 import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_services_page.dart';
 import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_settings_page.dart';
 import 'package:malta_wash/Src/Features/operation/presentation/pages/operation_board_page.dart';
-import 'package:malta_wash/Src/Features/public/presentation/pages/home_page.dart';
+import 'package:malta_wash/Src/Features/public/presentation/pages/responsive_home_page.dart';
 import 'package:malta_wash/Src/Features/vehicles/presentation/pages/vehicles_page.dart';
 import 'package:malta_wash/Src/Shared/layouts/app_shell.dart';
 
@@ -52,7 +52,7 @@ class AppRouter {
       return null;
     },
     routes: [
-      GoRoute(path: RoutePaths.home, builder: (_, __) => const HomePage()),
+      GoRoute(path: RoutePaths.home, builder: (_, __) => const ResponsiveHomePage()),
       GoRoute(path: RoutePaths.login, builder: (_, state) => LoginPage(initialArea: state.uri.queryParameters['area'])),
       GoRoute(path: RoutePaths.register, builder: (_, state) => RegisterPage(tenantSlug: state.uri.queryParameters['tenant'])),
       GoRoute(path: RoutePaths.companyRegister, builder: (_, __) => const CompanyRegisterPage()),
