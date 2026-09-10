@@ -7,11 +7,34 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = logoUrl != null && logoUrl!.isNotEmpty
-        ? Image.network(logoUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _local())
-        : _local();
-    return ClipOval(child: SizedBox(width: size, height: size, child: image));
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * .28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFF6A00), Color(0xFF2563EB)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF6A00).withOpacity(.20),
+            blurRadius: size * .28,
+            offset: Offset(0, size * .10),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        'MW',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: size * .30,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -1,
+        ),
+      ),
+    );
   }
-
-  Widget _local() => Image.asset('assets/branding/clinicar_logo.png', fit: BoxFit.cover);
 }
