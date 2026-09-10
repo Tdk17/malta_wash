@@ -33,7 +33,7 @@ class AppRouter {
       };
       final hasSession = await _sessionStorage.hasSession();
       if (public.contains(path)) return null;
-      if (!hasSession) return RoutePaths.login;
+      if (!hasSession) return '${RoutePaths.login}?area=cliente';
 
       final role = (await _sessionStorage.role())?.toUpperCase();
       if (role == null || role.isEmpty) return null;
@@ -60,8 +60,14 @@ class AppRouter {
     },
     routes: [
       GoRoute(path: RoutePaths.home, builder: (_, __) => const HomePage()),
-      GoRoute(path: RoutePaths.login, builder: (_, __) => const LoginPage()),
-      GoRoute(path: RoutePaths.register, builder: (_, __) => const RegisterPage()),
+      GoRoute(
+        path: RoutePaths.login,
+        builder: (_, state) => LoginPage(initialArea: state.uri.queryParameters['area']),
+      ),
+      GoRoute(
+        path: RoutePaths.register,
+        builder: (_, state) => RegisterPage(tenantSlug: state.uri.queryParameters['tenant']),
+      ),
       GoRoute(path: RoutePaths.resetPassword, builder: (_, __) => const ForgotPasswordPage()),
 
       ShellRoute(builder: (_, __, child) => AppShell(mode: ShellMode.client, child: child), routes: [
