@@ -48,7 +48,7 @@ class _Header extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () => context.go('${RoutePaths.login}?area=cliente'),
-                child: const Text('Cliente'),
+                child: const Text('Entrar como cliente'),
               ),
               const SizedBox(width: 8),
               OutlinedButton(
@@ -58,7 +58,7 @@ class _Header extends StatelessWidget {
                   side: const BorderSide(color: Colors.white24),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
                 ),
-                child: const Text('Empresa'),
+                child: const Text('Entrar como empresa'),
               ),
             ],
           ),
@@ -131,8 +131,8 @@ class _Hero extends StatelessWidget {
                       children: [
                         FilledButton.icon(
                           onPressed: () => context.go('${RoutePaths.login}?area=cliente'),
-                          icon: const Icon(Icons.calendar_month_rounded),
-                          label: const Text('Agendar lavagem'),
+                          icon: const Icon(Icons.person_rounded),
+                          label: const Text('Entrar como cliente'),
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFFFF6A00),
                             foregroundColor: Colors.white,
@@ -141,9 +141,9 @@ class _Hero extends StatelessWidget {
                           ),
                         ),
                         OutlinedButton.icon(
-                          onPressed: () => context.go(RoutePaths.companyRegister),
+                          onPressed: () => context.go('${RoutePaths.login}?area=empresa'),
                           icon: const Icon(Icons.storefront_rounded),
-                          label: const Text('Cadastrar empresa'),
+                          label: const Text('Entrar como empresa'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: const BorderSide(color: Colors.white24),
@@ -213,14 +213,14 @@ class _AccessSection extends StatelessWidget {
                 final client = _AccessCard(
                   icon: Icons.person_rounded,
                   title: 'Cliente',
-                  description: 'Agende uma lavagem, acompanhe seu veículo, veja seu plano e gerencie seu perfil.',
+                  description: 'Entre para agendar uma lavagem, acompanhar seu veículo, consultar seu plano e gerenciar seu perfil.',
                   button: 'Entrar como cliente',
                   onTap: () => context.go('${RoutePaths.login}?area=cliente'),
                 );
                 final company = _AccessCard(
                   icon: Icons.storefront_rounded,
                   title: 'Empresa',
-                  description: 'Acompanhe agenda, atendimentos, clientes e veículos sem complicação.',
+                  description: 'Entre no painel para acompanhar agenda, atendimentos, clientes e veículos.',
                   button: 'Entrar como empresa',
                   onTap: () => context.go('${RoutePaths.login}?area=empresa'),
                   dark: true,
