@@ -58,7 +58,7 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: Row(children: [
-        SizedBox(width: widget.mode == ShellMode.client ? 248 : 280, child: _Navigation(mode: widget.mode)),
+        SizedBox(width: widget.mode == ShellMode.client ? 248 : 248, child: _Navigation(mode: widget.mode)),
         Expanded(child: widget.child),
       ]),
     );
@@ -101,7 +101,7 @@ class _Navigation extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      mode == ShellMode.client ? 'Área do cliente' : 'powered by Malta Wash',
+                      mode == ShellMode.client ? 'Área do cliente' : mode == ShellMode.admin ? 'Gestão da lavação' : 'Malta Wash',
                       style: const TextStyle(color: Colors.white38, fontSize: 10.5),
                     ),
                   ]),
@@ -145,29 +145,15 @@ class _Navigation extends StatelessWidget {
   ];
 
   static const _adminItems = [
-    _NavItem('Dashboard', Icons.dashboard_outlined, RoutePaths.admin),
-    _NavItem('Agenda', Icons.calendar_view_week_outlined, RoutePaths.adminCalendar),
-    _NavItem('Fila operacional', Icons.local_car_wash_outlined, RoutePaths.adminOperation),
-    _NavItem('Agendamentos', Icons.event_available_outlined, RoutePaths.adminAppointments),
-    _NavItem('Clientes', Icons.groups_outlined, RoutePaths.adminCustomers),
-    _NavItem('Veículos', Icons.directions_car_outlined, RoutePaths.adminVehicles),
-    _NavItem('Ordens de serviço', Icons.receipt_long_outlined, RoutePaths.adminWorkOrders),
-    _NavItem('Serviços', Icons.cleaning_services_outlined, RoutePaths.adminServices),
-    _NavItem('Adicionais', Icons.add_circle_outline, RoutePaths.adminAddons),
-    _NavItem('Planos', Icons.workspace_premium_outlined, RoutePaths.adminPlans),
-    _NavItem('Assinaturas', Icons.autorenew, RoutePaths.adminSubscriptions),
-    _NavItem('Pacotes', Icons.inventory_2_outlined, RoutePaths.adminPackages),
-    _NavItem('Cupons', Icons.sell_outlined, RoutePaths.adminCoupons),
-    _NavItem('Unidades', Icons.store_mall_directory_outlined, RoutePaths.adminLocations),
-    _NavItem('Equipe', Icons.badge_outlined, RoutePaths.adminTeam),
-    _NavItem('Escalas e bloqueios', Icons.schedule_outlined, RoutePaths.adminSchedules),
-    _NavItem('Fidelidade', Icons.loyalty_outlined, RoutePaths.adminLoyalty),
-    _NavItem('Financeiro', Icons.account_balance_wallet_outlined, RoutePaths.adminFinance),
-    _NavItem('Relatórios', Icons.insights_outlined, RoutePaths.adminReports),
-    _NavItem('Avaliações', Icons.star_outline, RoutePaths.adminReviews),
-    _NavItem('Marketing / CRM', Icons.campaign_outlined, RoutePaths.adminMarketing),
-    _NavItem('Configurações', Icons.settings_outlined, RoutePaths.adminSettings),
-    _NavItem('Usuários e permissões', Icons.admin_panel_settings_outlined, RoutePaths.adminUsers),
+    _NavItem('Início', Icons.dashboard_rounded, RoutePaths.admin),
+    _NavItem('Agenda', Icons.calendar_month_rounded, RoutePaths.adminCalendar),
+    _NavItem('Agendamentos', Icons.event_available_rounded, RoutePaths.adminAppointments),
+    _NavItem('Atendimentos', Icons.local_car_wash_rounded, RoutePaths.adminOperation),
+    _NavItem('Clientes', Icons.people_alt_rounded, RoutePaths.adminCustomers),
+    _NavItem('Veículos', Icons.directions_car_filled_rounded, RoutePaths.adminVehicles),
+    _NavItem('Planos', Icons.workspace_premium_rounded, RoutePaths.adminPlans),
+    _NavItem('Fidelidade', Icons.loyalty_rounded, RoutePaths.adminLoyalty),
+    _NavItem('Configurações', Icons.settings_rounded, RoutePaths.adminSettings),
   ];
 
   static const _superItems = [
