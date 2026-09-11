@@ -32,13 +32,7 @@ class AppRouter {
     initialLocation: RoutePaths.home,
     redirect: (context, state) async {
       final path = state.uri.path;
-      final public = {
-        RoutePaths.home,
-        RoutePaths.login,
-        RoutePaths.register,
-        RoutePaths.companyRegister,
-        RoutePaths.resetPassword,
-      };
+      final public = {RoutePaths.home, RoutePaths.login, RoutePaths.register, RoutePaths.companyRegister, RoutePaths.resetPassword};
       final hasSession = await _sessionStorage.hasSession();
       if (public.contains(path)) return null;
       if (!hasSession) return '${RoutePaths.login}?area=cliente';
@@ -48,6 +42,7 @@ class AppRouter {
       final isSuperAdmin = role.contains('SUPER');
       final isAdmin = isSuperAdmin || role.contains('ADMIN') || role.contains('MANAGER') || role.contains('GERENTE') || role.contains('ATENDENTE') || role.contains('TECH') || role.contains('LAVADOR');
       if (path == RoutePaths.adminCalendar) return RoutePaths.adminAppointments;
+      if (path == RoutePaths.adminVehicles) return RoutePaths.adminCustomers;
       if (path.startsWith('/super-admin') && !isSuperAdmin) return isAdmin ? RoutePaths.admin : RoutePaths.client;
       if (path.startsWith('/admin') && !isAdmin) return RoutePaths.client;
       if (path.startsWith('/cliente') && isAdmin) return isSuperAdmin ? RoutePaths.superAdmin : RoutePaths.admin;
@@ -78,7 +73,7 @@ class AppRouter {
         GoRoute(path: RoutePaths.adminAppointments, builder: (_, __) => const AdminSchedulePage()),
         GoRoute(path: RoutePaths.adminOperation, builder: (_, __) => const OperationBoardPage()),
         GoRoute(path: RoutePaths.adminCustomers, builder: (_, __) => const AdminDirectoryPage()),
-        GoRoute(path: RoutePaths.adminVehicles, builder: (_, __) => const AdminDirectoryPage(vehicleFocus: true)),
+        GoRoute(path: RoutePaths.adminVehicles, builder: (_, __) => const AdminDirectoryPage()),
         GoRoute(path: RoutePaths.adminServices, builder: (_, __) => const AdminServicesPage()),
         GoRoute(path: RoutePaths.adminPlans, builder: (_, __) => const AdminCommercialConfigPage(mode: CommercialConfigMode.plans)),
         GoRoute(path: RoutePaths.adminLoyalty, builder: (_, __) => const AdminCommercialConfigPage(mode: CommercialConfigMode.loyalty)),
