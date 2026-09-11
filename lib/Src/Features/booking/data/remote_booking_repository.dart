@@ -9,17 +9,59 @@ class RemoteBookingRepository implements BookingRepository {
 
   List<Map<String, dynamic>> _list(dynamic raw) {
     if (raw is List) {
-      return raw.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList();
+      return raw
+          .map<Map<String, dynamic>?>((item) {
+            if (item is Map<String, dynamic>) return item;
+            if (item is Map) {
+              return item.map((k, v) => MapEntry(k.toString(), v));
+            }
+            if (item is String || item is num) {
+              final value = item.toString().trim();
+              if (value.isEmpty) return null;
+              return <String, dynamic>{'time': value, 'available': true};
+            }
+            return null;
+          })
+          .whereType<Map<String, dynamic>>()
+          .toList();
     }
+
     if (raw is Map) {
       final map = raw.map((k, v) => MapEntry(k.toString(), v));
-      for (final key in const ['items','data','results','locations','services','addons','slots']) {
+      for (final key in const [
+        'items',
+        'data',
+        'results',
+        'locations',
+        'services',
+        'addons',
+        'slots',
+        'availableSlots',
+        'available_times',
+        'availableTimes',
+        'times',
+        'hours',
+        'availability',
+      ]) {
         if (map[key] != null) {
           final result = _list(map[key]);
           if (result.isNotEmpty || map[key] is List) return result;
         }
       }
+
+      // Alguns backends devolvem os horários como mapa, por exemplo:
+      // {"08:00": true, "09:00": false}. Converte somente os disponíveis.
+      final timeEntries = map.entries
+          .where((entry) => RegExp(r'^\d{1,2}:\d{2}$').hasMatch(entry.key))
+          .where((entry) => entry.value != false)
+          .map((entry) => <String, dynamic>{
+                'time': entry.key,
+                'available': true,
+              })
+          .toList();
+      if (timeEntries.isNotEmpty) return timeEntries;
     }
+
     return const [];
   }
 
@@ -30,16 +72,20 @@ class RemoteBookingRepository implements BookingRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> locations() async => _list(await _http.request(Endpoints.locations));
+  Future<List<Map<String, dynamic>>> locations() async =>
+      _list(await _http.request(Endpoints.locations));
 
   @override
-  Future<Map<String, dynamic>> settings() async => _map(await _http.request(Endpoints.settings));
+  Future<Map<String, dynamic>> settings() async =>
+      _map(await _http.request(Endpoints.settings));
 
   @override
-  Future<List<Map<String, dynamic>>> services() async => _list(await _http.request(Endpoints.services));
+  Future<List<Map<String, dynamic>>> services() async =>
+      _list(await _http.request(Endpoints.services));
 
   @override
-  Future<List<Map<String, dynamic>>> addons() async => _list(await _http.request(Endpoints.serviceAddons));
+  Future<List<Map<String, dynamic>>> addons() async =>
+      _list(await _http.request(Endpoints.serviceAddons));
 
   @override
   Future<List<Map<String, dynamic>>> availability({
@@ -51,7 +97,8 @@ class RemoteBookingRepository implements BookingRepository {
     final raw = await _http.request(
       Endpoints.availability,
       queryParameters: {
-        if (locationId != null && locationId.isNotEmpty) 'locationId': locationId,
+        if (locationId != null && locationId.isNotEmpty)
+          'locationId': locationId,
         'serviceId': serviceId,
         'vehicleId': vehicleId,
         'date': date,
@@ -61,6 +108,11 @@ class RemoteBookingRepository implements BookingRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> createAppointment(Map<String, dynamic> payload) async =>
-      _map(await _http.request(Endpoints.appointments, method: HttpMethod.post, data: payload));
+  Future<Map<String, dynamic>> createAppointment(
+          Map<String, dynamic> payload) async =>
+      _map(await _http.request(
+        Endpoints.appointments,
+        method: HttpMethod.post,
+        data: payload,
+      ));
 }
