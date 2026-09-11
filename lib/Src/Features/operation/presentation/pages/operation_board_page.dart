@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:malta_wash/Src/Core/di/service_locator.dart';
 import 'package:malta_wash/Src/Core/http/endpoints.dart';
 import 'package:malta_wash/Src/Features/common/domain/resource_repository.dart';
-import 'package:malta_wash/Src/Features/common/presentation/controllers/resource_list_controller.dart';
-import 'package:malta_wash/Src/Shared/widgets/async_state_view.dart';
-import 'package:signals/signals_flutter.dart';
 
 class OperationBoardPage extends StatefulWidget {
   const OperationBoardPage({super.key});
@@ -14,8 +11,13 @@ class OperationBoardPage extends StatefulWidget {
 }
 
 class _OperationBoardPageState extends State<OperationBoardPage> {
-  late final ResourceRepository repository = sl<ResourceRepository>();
-  late final controller = ResourceListController(repository, Endpoints.appointments)..load();
+  final ResourceRepository repository = sl<ResourceRepository>();
+  List<Map<String, dynamic>> appointments = const [];
+  List<Map<String, dynamic>> customers = const [];
+  List<Map<String, dynamic>> vehicles = const [];
+  List<Map<String, dynamic>> services = const [];
+  bool loading = true;
+  String? error;
   String? updatingId;
 
   static const statuses = ['CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS', 'READY', 'COMPLETED'];
@@ -26,7 +28,6 @@ class _OperationBoardPageState extends State<OperationBoardPage> {
     'READY': 'Prontos',
     'COMPLETED': 'Finalizados',
   };
-
   static const icons = {
     'CONFIRMED': Icons.event_available_rounded,
     'CHECKED_IN': Icons.login_rounded,
@@ -36,48 +37,77 @@ class _OperationBoardPageState extends State<OperationBoardPage> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final result = await Future.wait([
+        repository.list(Endpoints.appointments),
+        repository.list(Endpoints.customers),
+        repository.list(Endpoints.vehicles),
+        repository.list(Endpoints.services),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        appointments = result[0];
+        customers = result[1];
+        vehicles = result[2];
+        services = result[3];
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 28, 28, 36),
-      child: Column(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Atendimentos', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: -1)),
+            SizedBox(height: 5),
+            Text('Acompanhe cada veículo da chegada até a entrega.', style: TextStyle(color: Color(0xFF667085), fontSize: 14.5)),
+          ])),
+          IconButton.filledTonal(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+        ]),
+        const SizedBox(height: 22),
+        Expanded(child: _body()),
+      ]),
+    );
+  }
+
+  Widget _body() {
+    if (loading) return const Center(child: CircularProgressIndicator());
+    if (error != null) {
+      return Center(child: Text(error!, style: const TextStyle(color: Color(0xFFB91C1C))));
+    }
+    if (appointments.isEmpty) {
+      return const Center(child: Text('Nenhum atendimento por enquanto.', style: TextStyle(fontWeight: FontWeight.w800)));
+    }
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            const Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Atendimentos', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: -1)),
-                SizedBox(height: 5),
-                Text('Do agendamento até o carro pronto, sem ordem de serviço separada.', style: TextStyle(color: Color(0xFF667085), fontSize: 14.5)),
-              ]),
-            ),
-            IconButton.filledTonal(onPressed: controller.load, icon: const Icon(Icons.refresh_rounded)),
-          ]),
-          const SizedBox(height: 22),
-          Expanded(
-            child: Watch((_) => AsyncStateView(
-                  isLoading: controller.isLoading.value,
-                  errorMessage: controller.errorMessage.value,
-                  isEmpty: controller.items.value.isEmpty,
-                  onRetry: controller.load,
-                  emptyTitle: 'Nenhum atendimento por enquanto',
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: statuses.map((status) => _column(status)).toList(),
-                    ),
-                  ),
-                )),
-          ),
-        ],
+        children: statuses.map(_column).toList(),
       ),
     );
   }
 
   Widget _column(String status) {
-    final items = controller.items.value.where((item) => _status(item) == status).toList();
+    final items = appointments.where((item) => _status(item) == status).toList();
     return Container(
-      width: 292,
+      width: 310,
       margin: const EdgeInsets.only(right: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -87,36 +117,35 @@ class _OperationBoardPageState extends State<OperationBoardPage> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(11)),
-            child: Icon(icons[status], size: 19, color: const Color(0xFFFF6A00)),
-          ),
+          Container(width: 36, height: 36, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(11)), child: Icon(icons[status], size: 19, color: const Color(0xFFFF6A00))),
           const SizedBox(width: 10),
           Expanded(child: Text(labels[status]!, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5))),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
-            child: Text('${items.length}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-          ),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)), child: Text('${items.length}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
         ]),
         const SizedBox(height: 12),
-        ...items.map((item) => _appointmentCard(item, status)),
+        if (items.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 12),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(.65), borderRadius: BorderRadius.circular(14)),
+            child: Text('Nenhum veículo em ${labels[status]!.toLowerCase()}.', textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFF98A2B3), fontSize: 12.5)),
+          )
+        else
+          ...items.map((item) => _appointmentCard(item, status)),
       ]),
     );
   }
 
   Widget _appointmentCard(Map<String, dynamic> item, String status) {
-    final id = (item['id'] ?? item['objectId'] ?? '').toString();
-    final vehicleMap = item['vehicle'] is Map ? Map<String, dynamic>.from(item['vehicle'] as Map) : const <String, dynamic>{};
-    final customerMap = item['customer'] is Map ? Map<String, dynamic>.from(item['customer'] as Map) : const <String, dynamic>{};
-    final serviceMap = item['service'] is Map ? Map<String, dynamic>.from(item['service'] as Map) : const <String, dynamic>{};
-    final plate = (item['vehiclePlate'] ?? item['plate'] ?? vehicleMap['plate'] ?? 'Veículo').toString();
-    final vehicle = (item['vehicleName'] ?? item['model'] ?? vehicleMap['model'] ?? '').toString();
-    final customer = (item['customerName'] ?? customerMap['name'] ?? '').toString();
-    final service = (item['serviceName'] ?? serviceMap['name'] ?? (item['service'] is String ? item['service'] : '')).toString();
-    final time = (item['startTime'] ?? item['start'] ?? item['startAt'] ?? '').toString();
+    final id = _id(item);
+    final customer = _resolveCustomer(item);
+    final vehicle = _resolveVehicle(item);
+    final service = _resolveService(item);
+    final customerName = _pick(customer ?? item, ['name', 'customerName', 'clientName'], fallback: 'Cliente não identificado');
+    final model = _pick(vehicle ?? item, ['model', 'vehicleName', 'name'], fallback: 'Veículo');
+    final plate = _pick(vehicle ?? item, ['plate', 'licensePlate'], fallback: 'Sem placa');
+    final serviceName = _pick(service ?? item, ['name', 'serviceName', 'title'], fallback: 'Serviço');
+    final time = _first(item, ['startAt', 'scheduledAt', 'appointmentAt', 'startsAt', 'start']);
     final next = _nextStatus(status);
     final busy = updatingId == id;
 
@@ -124,40 +153,44 @@ class _OperationBoardPageState extends State<OperationBoardPage> {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Color(0x0A101828), blurRadius: 16, offset: Offset(0, 7))],
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Color(0x0A101828), blurRadius: 16, offset: Offset(0, 7))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Expanded(child: Text(plate, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17))),
-          if (time.isNotEmpty) Text(_shortTime(time), style: const TextStyle(color: Color(0xFF667085), fontSize: 12)),
+          Expanded(child: Text(customerName, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),
+          if (time.isNotEmpty) Text(_shortTime(time), style: const TextStyle(color: Color(0xFF667085), fontSize: 12, fontWeight: FontWeight.w700)),
         ]),
-        if (vehicle.isNotEmpty) ...[
-          const SizedBox(height: 3),
-          Text(vehicle, style: const TextStyle(color: Color(0xFF475467), fontWeight: FontWeight.w600)),
-        ],
-        if (customer.isNotEmpty) ...[
-          const SizedBox(height: 9),
-          Row(children: [const Icon(Icons.person_outline_rounded, size: 16, color: Color(0xFF98A2B3)), const SizedBox(width: 6), Expanded(child: Text(customer, style: const TextStyle(fontSize: 12.5, color: Color(0xFF667085))))]),
-        ],
-        if (service.isNotEmpty) ...[
-          const SizedBox(height: 5),
-          Row(children: [const Icon(Icons.water_drop_outlined, size: 16, color: Color(0xFFFF6A00)), const SizedBox(width: 6), Expanded(child: Text(service, style: const TextStyle(fontSize: 12.5, color: Color(0xFF667085))))]),
-        ],
+        const SizedBox(height: 9),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.directions_car_filled_rounded, size: 17, color: Color(0xFF2563EB)),
+              const SizedBox(width: 7),
+              Expanded(child: Text(model, style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
+            ]),
+            const SizedBox(height: 5),
+            Row(children: [
+              const Icon(Icons.pin_outlined, size: 17, color: Color(0xFFFF6A00)),
+              const SizedBox(width: 7),
+              Text(plate, style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+            ]),
+          ]),
+        ),
+        const SizedBox(height: 8),
+        Row(children: [
+          const Icon(Icons.water_drop_outlined, size: 16, color: Color(0xFFFF6A00)),
+          const SizedBox(width: 6),
+          Expanded(child: Text(serviceName, style: const TextStyle(fontSize: 12.5, color: Color(0xFF667085)))),
+        ]),
         if (next != null) ...[
           const SizedBox(height: 13),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
               onPressed: busy || id.isEmpty ? null : () => _advance(id, next),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6A00),
-                foregroundColor: Colors.white,
-                minimumSize: const Size(0, 42),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF6A00), foregroundColor: Colors.white, minimumSize: const Size(0, 42), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               child: busy
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Text(_nextLabel(next), style: const TextStyle(fontWeight: FontWeight.w800)),
@@ -172,12 +205,14 @@ class _OperationBoardPageState extends State<OperationBoardPage> {
     setState(() => updatingId = id);
     try {
       await repository.patch(Endpoints.appointment(id), {'status': status});
-      await controller.load();
-      if (mounted && status == 'READY') {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veículo marcado como pronto.')));
-      }
-      if (mounted && status == 'COMPLETED') {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Atendimento finalizado.')));
+      await _load();
+      if (mounted) {
+        final text = status == 'READY'
+            ? 'Veículo marcado como pronto.'
+            : status == 'COMPLETED'
+                ? 'Atendimento finalizado.'
+                : 'Atendimento atualizado.';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -186,9 +221,53 @@ class _OperationBoardPageState extends State<OperationBoardPage> {
     }
   }
 
+  Map<String, dynamic>? _resolveCustomer(Map<String, dynamic> appointment) {
+    final embedded = appointment['customer'];
+    if (embedded is Map) return embedded.map((k, v) => MapEntry(k.toString(), v));
+    final customerId = _first(appointment, ['customerId', 'clientId', 'userId', 'ownerId']);
+    if (customerId.isNotEmpty) {
+      for (final c in customers) {
+        if (_id(c) == customerId) return c;
+      }
+    }
+    final vehicle = _resolveVehicle(appointment);
+    final ownerId = vehicle == null ? '' : _first(vehicle, ['customerId', 'clientId', 'userId', 'ownerId']);
+    if (ownerId.isNotEmpty) {
+      for (final c in customers) {
+        if (_id(c) == ownerId) return c;
+      }
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _resolveVehicle(Map<String, dynamic> appointment) {
+    final embedded = appointment['vehicle'];
+    if (embedded is Map) return embedded.map((k, v) => MapEntry(k.toString(), v));
+    final vehicleId = _first(appointment, ['vehicleId', 'carId']);
+    if (vehicleId.isEmpty) return null;
+    for (final v in vehicles) {
+      if (_id(v) == vehicleId) return v;
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _resolveService(Map<String, dynamic> appointment) {
+    final embedded = appointment['service'];
+    if (embedded is Map) return embedded.map((k, v) => MapEntry(k.toString(), v));
+    final serviceId = _first(appointment, ['serviceId']);
+    if (serviceId.isEmpty) return null;
+    for (final s in services) {
+      if (_id(s) == serviceId) return s;
+    }
+    return null;
+  }
+
   String _status(Map<String, dynamic> item) {
-    final raw = (item['status'] ?? 'CONFIRMED').toString().toUpperCase();
-    if (raw == 'PENDING_PAYMENT') return 'CONFIRMED';
+    final raw = _first(item, ['status', 'state', 'appointmentStatus']).toUpperCase();
+    if (raw == 'PENDING_PAYMENT' || raw == 'SCHEDULED' || raw == 'BOOKED') return 'CONFIRMED';
+    if (raw == 'ARRIVED') return 'CHECKED_IN';
+    if (raw == 'WASHING') return 'IN_PROGRESS';
+    if (raw == 'DONE' || raw == 'FINISHED') return 'COMPLETED';
     return statuses.contains(raw) ? raw : 'CONFIRMED';
   }
 
@@ -213,5 +292,20 @@ class _OperationBoardPageState extends State<OperationBoardPage> {
     final dt = DateTime.tryParse(raw)?.toLocal();
     if (dt == null) return '';
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _id(Map<String, dynamic> item) => _first(item, ['id', 'objectId', '_id']);
+
+  String _first(Map<String, dynamic> item, List<String> keys) {
+    for (final key in keys) {
+      final value = item[key];
+      if (value != null && value is! Map && value.toString().trim().isNotEmpty) return value.toString().trim();
+    }
+    return '';
+  }
+
+  String _pick(Map<String, dynamic> item, List<String> keys, {String fallback = '—'}) {
+    final value = _first(item, keys);
+    return value.isEmpty ? fallback : value;
   }
 }
