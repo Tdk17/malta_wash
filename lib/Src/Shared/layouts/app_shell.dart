@@ -152,8 +152,7 @@ class _Navigation extends StatelessWidget {
     _NavItem('Atendimentos', Icons.local_car_wash_rounded, RoutePaths.adminOperation),
     _NavItem('Clientes', Icons.people_alt_rounded, RoutePaths.adminCustomers),
     _NavItem('Serviços', Icons.cleaning_services_rounded, RoutePaths.adminServices),
-    _NavItem('Planos', Icons.workspace_premium_rounded, RoutePaths.adminPlans),
-    _NavItem('Fidelidade', Icons.loyalty_rounded, RoutePaths.adminLoyalty),
+    _NavItem('Planos de fidelidade', Icons.loyalty_rounded, RoutePaths.adminPlans),
     _NavItem('Configurações', Icons.settings_rounded, RoutePaths.adminSettings),
   ];
 
