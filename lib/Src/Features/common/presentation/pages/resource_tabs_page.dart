@@ -7,12 +7,16 @@ class ResourceTabDefinition {
     required this.title,
     required this.subtitle,
     required this.endpoint,
+    this.visibleKeys,
+    this.labels = const {},
   });
 
   final String label;
   final String title;
   final String subtitle;
   final String endpoint;
+  final List<String>? visibleKeys;
+  final Map<String, String> labels;
 }
 
 class ResourceTabsPage extends StatelessWidget {
@@ -27,7 +31,7 @@ class ResourceTabsPage extends StatelessWidget {
       child: Column(
         children: [
           Material(
-            color: Theme.of(context).colorScheme.surface,
+            color: Colors.transparent,
             child: TabBar(
               isScrollable: true,
               tabAlignment: TabAlignment.start,
@@ -42,6 +46,8 @@ class ResourceTabsPage extends StatelessWidget {
                       title: tab.title,
                       subtitle: tab.subtitle,
                       endpoint: tab.endpoint,
+                      visibleKeys: tab.visibleKeys,
+                      labels: tab.labels,
                     ),
                   )
                   .toList(),
