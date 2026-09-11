@@ -71,34 +71,8 @@ class _CenterCanvas extends StatelessWidget {
             ),
           ),
           const Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: _CenterGridPainter()))),
-          Positioned(
-            top: -170,
-            right: -130,
-            child: IgnorePointer(
-              child: Container(
-                width: 390,
-                height: 390,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF2563EB).withOpacity(.055),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -190,
-            left: -130,
-            child: IgnorePointer(
-              child: Container(
-                width: 420,
-                height: 420,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFFF6A00).withOpacity(.05),
-                ),
-              ),
-            ),
-          ),
+          Positioned(top: -170, right: -130, child: IgnorePointer(child: Container(width: 390, height: 390, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF2563EB).withOpacity(.055))))),
+          Positioned(bottom: -190, left: -130, child: IgnorePointer(child: Container(width: 420, height: 420, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFFF6A00).withOpacity(.05))))),
           child,
         ],
       ),
@@ -183,7 +157,6 @@ class _Navigation extends StatelessWidget {
 
   static const _adminItems = [
     _NavItem('Início', Icons.space_dashboard_rounded, RoutePaths.admin),
-    _NavItem('Agenda', Icons.calendar_month_rounded, RoutePaths.adminCalendar),
     _NavItem('Agendamentos', Icons.event_available_rounded, RoutePaths.adminAppointments),
     _NavItem('Atendimentos', Icons.local_car_wash_rounded, RoutePaths.adminOperation),
     _NavItem('Clientes', Icons.people_alt_rounded, RoutePaths.adminCustomers),
@@ -265,9 +238,7 @@ class _CenterGridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF64748B).withOpacity(.045)
-      ..strokeWidth = .55;
+    final paint = Paint()..color = const Color(0xFF64748B).withOpacity(.045)..strokeWidth = .55;
     const gap = 36.0;
     for (double x = 0; x <= size.width; x += gap) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
