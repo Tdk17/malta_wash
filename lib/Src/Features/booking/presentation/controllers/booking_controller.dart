@@ -50,7 +50,7 @@ class BookingController {
       if (vehicles.value.length == 1) vehicleId.value = _id(vehicles.value.first);
       if (services.value.length == 1) serviceId.value = _id(services.value.first);
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = _friendlyError(e);
     } finally {
       isLoading.value = false;
     }
@@ -58,13 +58,11 @@ class BookingController {
 
   Future<void> _loadLegacyDefaultLocation() async {
     try {
-      final items = (await _booking.locations())
-          .where(_hasUsableId)
-          .where((item) => item['active'] != false)
-          .toList();
-      if (items.isNotEmpty) _legacyLocationId = _id(items.first);
+      final items = (await _booking.locations()).where(_hasUsableId).toList();
+      final active = items.where((item) => item['active'] != false).toList();
+      final source = active.isNotEmpty ? active : items;
+      if (source.isNotEmpty) _legacyLocationId = _id(source.first);
     } catch (_) {
-      // Compatibilidade temporária: o MVP não depende mais de unidade.
       _legacyLocationId = null;
     }
   }
@@ -75,14 +73,21 @@ class BookingController {
     errorMessage.value = null;
     startAt.value = null;
     try {
-      slots.value = await _booking.availability(
+      _legacyLocationId ??= _locationFromSelectedService();
+
+      final rawSlots = await _booking.availability(
         locationId: _legacyLocationId,
         serviceId: serviceId.value!,
         vehicleId: vehicleId.value!,
         date: DateFormat('yyyy-MM-dd').format(date.value!),
       );
+
+      slots.value = rawSlots
+          .map(_normalizeSlot)
+          .where((slot) => (slot['startAt'] ?? '').toString().trim().isNotEmpty)
+          .toList();
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = _friendlyError(e);
       slots.value = const [];
     } finally {
       isLoading.value = false;
@@ -98,18 +103,92 @@ class BookingController {
     isLoading.value = true;
     errorMessage.value = null;
     try {
+      _legacyLocationId ??= _locationFromSelectedService();
       return await _booking.createAppointment({
-        if (_legacyLocationId != null) 'locationId': _legacyLocationId,
+        if (_legacyLocationId != null && _legacyLocationId!.isNotEmpty)
+          'locationId': _legacyLocationId,
         'vehicleId': vehicleId.value,
         'serviceId': serviceId.value,
         'startAt': startAt.value,
       });
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = _friendlyError(e);
       return null;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Map<String, dynamic> _normalizeSlot(Map<String, dynamic> raw) {
+    final normalized = Map<String, dynamic>.from(raw);
+    final direct = _firstNonEmpty(raw, const [
+      'startAt',
+      'start',
+      'dateTime',
+      'datetime',
+      'value',
+    ]);
+    final time = _firstNonEmpty(raw, const [
+      'time',
+      'hour',
+      'label',
+      'startTime',
+    ]);
+
+    String resolved = direct;
+    if (resolved.isEmpty && time.isNotEmpty && date.value != null) {
+      final datePart = DateFormat('yyyy-MM-dd').format(date.value!);
+      final cleaned = time.trim();
+      if (RegExp(r'^\d{1,2}:\d{2}$').hasMatch(cleaned)) {
+        resolved = '${datePart}T${cleaned.padLeft(5, '0')}:00';
+      }
+    }
+
+    normalized['startAt'] = resolved;
+    if ((normalized['start'] ?? '').toString().trim().isEmpty && time.isNotEmpty) {
+      normalized['start'] = time;
+    }
+    return normalized;
+  }
+
+  String? _locationFromSelectedService() {
+    final selected = services.value.cast<Map<String, dynamic>?>().firstWhere(
+          (item) => item != null && _id(item) == serviceId.value,
+          orElse: () => null,
+        );
+    if (selected == null) return null;
+
+    for (final key in const ['locationId', 'defaultLocationId', 'locationObjectId']) {
+      final value = selected[key]?.toString().trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+
+    final location = selected['location'];
+    if (location is Map) {
+      final map = location.map((k, v) => MapEntry(k.toString(), v));
+      final value = _id(map);
+      if (value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  String _friendlyError(Object error) {
+    final text = error.toString();
+    final lower = text.toLowerCase();
+    if (lower.contains('locationid') ||
+        lower.contains('location id') ||
+        (lower.contains('location') && lower.contains('obrigat'))) {
+      return 'A agenda da empresa ainda não está configurada corretamente. Tente novamente em instantes.';
+    }
+    return text;
+  }
+
+  String _firstNonEmpty(Map<String, dynamic> item, List<String> keys) {
+    for (final key in keys) {
+      final value = item[key]?.toString().trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return '';
   }
 
   bool _hasUsableId(Map<String, dynamic> item) => _id(item).isNotEmpty;
