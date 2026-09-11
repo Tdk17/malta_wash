@@ -13,9 +13,11 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final desktop = MediaQuery.sizeOf(context).width >= 980;
+    final content = _CenterCanvas(child: child);
+
     if (!desktop) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF4F6F8),
+        backgroundColor: const Color(0xFFEEF2F7),
         appBar: AppBar(
           backgroundColor: const Color(0xFF0A0D12),
           foregroundColor: Colors.white,
@@ -29,16 +31,77 @@ class AppShell extends StatelessWidget {
           ]),
         ),
         drawer: Drawer(width: 286, backgroundColor: Colors.transparent, child: SafeArea(child: _Navigation(mode: mode))),
-        body: child,
+        body: content,
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
+      backgroundColor: const Color(0xFFEEF2F7),
       body: Row(children: [
         SizedBox(width: 258, child: _Navigation(mode: mode)),
-        Expanded(child: child),
+        Expanded(child: content),
       ]),
+    );
+  }
+}
+
+class _CenterCanvas extends StatelessWidget {
+  const _CenterCanvas({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFF8FAFC),
+                  Color(0xFFF1F5F9),
+                  Color(0xFFEEF4FF),
+                  Color(0xFFFFF7ED),
+                ],
+                stops: [0, .42, .74, 1],
+              ),
+            ),
+          ),
+          const Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: _CenterGridPainter()))),
+          Positioned(
+            top: -170,
+            right: -130,
+            child: IgnorePointer(
+              child: Container(
+                width: 390,
+                height: 390,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF2563EB).withOpacity(.055),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -190,
+            left: -130,
+            child: IgnorePointer(
+              child: Container(
+                width: 420,
+                height: 420,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFFF6A00).withOpacity(.05),
+                ),
+              ),
+            ),
+          ),
+          child,
+        ],
+      ),
     );
   }
 }
@@ -185,6 +248,27 @@ class _GridPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = const Color(0xFF334155).withOpacity(.13)..strokeWidth = .6;
     const gap = 28.0;
+    for (double x = 0; x <= size.width; x += gap) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y <= size.height; y += gap) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _CenterGridPainter extends CustomPainter {
+  const _CenterGridPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF64748B).withOpacity(.045)
+      ..strokeWidth = .55;
+    const gap = 36.0;
     for (double x = 0; x <= size.width; x += gap) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
