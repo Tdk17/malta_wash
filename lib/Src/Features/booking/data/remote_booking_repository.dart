@@ -35,6 +35,7 @@ class RemoteBookingRepository implements BookingRepository {
         'locations',
         'services',
         'addons',
+        'appointments',
         'slots',
         'availableSlots',
         'available_times',
@@ -49,8 +50,6 @@ class RemoteBookingRepository implements BookingRepository {
         }
       }
 
-      // Alguns backends devolvem os horários como mapa, por exemplo:
-      // {"08:00": true, "09:00": false}. Converte somente os disponíveis.
       final timeEntries = map.entries
           .where((entry) => RegExp(r'^\d{1,2}:\d{2}$').hasMatch(entry.key))
           .where((entry) => entry.value != false)
@@ -86,6 +85,22 @@ class RemoteBookingRepository implements BookingRepository {
   @override
   Future<List<Map<String, dynamic>>> addons() async =>
       _list(await _http.request(Endpoints.serviceAddons));
+
+  @override
+  Future<List<Map<String, dynamic>>> appointments({
+    String? locationId,
+    required String date,
+  }) async {
+    final raw = await _http.request(
+      Endpoints.appointments,
+      queryParameters: {
+        if (locationId != null && locationId.isNotEmpty)
+          'locationId': locationId,
+        'date': date,
+      },
+    );
+    return _list(raw);
+  }
 
   @override
   Future<List<Map<String, dynamic>>> availability({
