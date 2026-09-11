@@ -21,6 +21,7 @@ class BookingController {
   final startAt = signal<String?>(null);
 
   String? _legacyLocationId;
+  Map<String, dynamic> _settings = const {};
 
   Future<void> bootstrap() async {
     isLoading.value = true;
@@ -58,20 +59,20 @@ class BookingController {
 
   Future<void> _loadDefaultLocation() async {
     try {
-      final settings = await _booking.settings();
+      _settings = await _booking.settings();
       for (final key in const [
         'defaultLocationId',
         'locationId',
         'locationObjectId',
       ]) {
-        final value = settings[key]?.toString().trim() ?? '';
+        final value = _settings[key]?.toString().trim() ?? '';
         if (value.isNotEmpty) {
           _legacyLocationId = value;
           return;
         }
       }
 
-      final location = settings['location'];
+      final location = _settings['location'];
       if (location is Map) {
         final map = location.map((k, v) => MapEntry(k.toString(), v));
         final value = _id(map);
@@ -107,25 +108,159 @@ class BookingController {
         await _loadDefaultLocation();
       }
 
-      final rawSlots = await _booking.availability(
-        locationId: _legacyLocationId,
-        serviceId: serviceId.value!,
-        vehicleId: vehicleId.value!,
-        date: DateFormat('yyyy-MM-dd').format(date.value!),
-      );
+      final dateText = DateFormat('yyyy-MM-dd').format(date.value!);
+      List<Map<String, dynamic>> rawSlots = const [];
 
-      slots.value = rawSlots
+      try {
+        rawSlots = await _booking.availability(
+          locationId: _legacyLocationId,
+          serviceId: serviceId.value!,
+          vehicleId: vehicleId.value!,
+          date: dateText,
+        );
+      } catch (_) {
+        rawSlots = const [];
+      }
+
+      var normalized = rawSlots
           .map(_normalizeSlot)
           .where((slot) => slot['available'] != false)
           .where((slot) =>
               (slot['startAt'] ?? '').toString().trim().isNotEmpty)
           .toList();
+
+      if (normalized.isEmpty) {
+        normalized = await _buildSlotsFromCompanySchedule(dateText);
+      }
+
+      slots.value = normalized;
+      if (normalized.isEmpty) {
+        errorMessage.value =
+            'Não há horários livres para esta data. Escolha outro dia.';
+      }
     } catch (e) {
       errorMessage.value = _friendlyError(e);
       slots.value = const [];
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _buildSlotsFromCompanySchedule(
+      String dateText) async {
+    if (_settings.isEmpty) {
+      try {
+        _settings = await _booking.settings();
+      } catch (_) {
+        return const [];
+      }
+    }
+
+    final selectedDate = date.value!;
+    final workingDays = _settings['workingDays'];
+    if (workingDays is List && workingDays.isNotEmpty) {
+      final allowed = workingDays
+          .map((e) => int.tryParse(e.toString()))
+          .whereType<int>()
+          .toSet();
+      if (!allowed.contains(selectedDate.weekday)) return const [];
+    }
+
+    final opening = _settingText(
+      const ['openingTime', 'opensAt'],
+      fallback: '08:00',
+    );
+    final closing = _settingText(
+      const ['closingTime', 'closesAt'],
+      fallback: '18:00',
+    );
+    final slotMinutes = int.tryParse(
+          _settingText(
+            const ['slotMinutes', 'slotIntervalMinutes'],
+            fallback: '30',
+          ),
+        ) ??
+        30;
+
+    final service = _selectedService();
+    final durationMinutes = int.tryParse(
+          (service['durationMinutes'] ?? service['duration'] ?? slotMinutes)
+              .toString(),
+        ) ??
+        slotMinutes;
+
+    final openTime = _combineDateAndTime(opening);
+    final closeTime = _combineDateAndTime(closing);
+    final open = DateTime.tryParse(openTime);
+    final close = DateTime.tryParse(closeTime);
+    if (open == null || close == null || !close.isAfter(open)) return const [];
+
+    List<Map<String, dynamic>> appointments = const [];
+    try {
+      appointments = await _booking.appointments(
+        locationId: _legacyLocationId,
+        date: dateText,
+      );
+    } catch (_) {}
+
+    final busyRanges = appointments
+        .where((item) => !_isCancelled(item))
+        .map(_appointmentRange)
+        .whereType<_TimeRange>()
+        .toList();
+
+    final now = DateTime.now();
+    final result = <Map<String, dynamic>>[];
+    var cursor = open;
+
+    while (!cursor.add(Duration(minutes: durationMinutes)).isAfter(close)) {
+      final end = cursor.add(Duration(minutes: durationMinutes));
+      final inPast = cursor.isBefore(now);
+      final conflicts = busyRanges.any(
+        (busy) => cursor.isBefore(busy.end) && end.isAfter(busy.start),
+      );
+
+      if (!inPast && !conflicts) {
+        result.add({
+          'startAt': cursor.toIso8601String(),
+          'start': DateFormat('HH:mm').format(cursor),
+          'available': true,
+        });
+      }
+
+      cursor = cursor.add(Duration(minutes: slotMinutes <= 0 ? 30 : slotMinutes));
+    }
+
+    return result;
+  }
+
+  _TimeRange? _appointmentRange(Map<String, dynamic> item) {
+    final rawStart = _firstNonEmpty(item, const [
+      'startAt',
+      'start',
+      'startsAt',
+      'dateTime',
+      'scheduledAt',
+    ]);
+    if (rawStart.isEmpty) return null;
+
+    final start = DateTime.tryParse(rawStart) ??
+        (_looksLikeTime(rawStart) ? DateTime.tryParse(_combineDateAndTime(rawStart)) : null);
+    if (start == null) return null;
+
+    final rawEnd = _firstNonEmpty(item, const ['endAt', 'end', 'endsAt']);
+    final explicitEnd = DateTime.tryParse(rawEnd);
+    if (explicitEnd != null) return _TimeRange(start, explicitEnd);
+
+    final itemDuration = int.tryParse(
+      (item['durationMinutes'] ?? item['duration'] ?? 60).toString(),
+    );
+    return _TimeRange(start, start.add(Duration(minutes: itemDuration ?? 60)));
+  }
+
+  bool _isCancelled(Map<String, dynamic> item) {
+    final status = (item['status'] ?? '').toString().toLowerCase();
+    return status.contains('cancel') || status == 'no_show' || status == 'noshow';
   }
 
   Future<Map<String, dynamic>?> confirm() async {
@@ -216,12 +351,16 @@ class BookingController {
     return match?.group(1) ?? value;
   }
 
+  Map<String, dynamic> _selectedService() {
+    for (final item in services.value) {
+      if (_id(item) == serviceId.value) return item;
+    }
+    return const {};
+  }
+
   String? _locationFromSelectedService() {
-    final selected = services.value.cast<Map<String, dynamic>?>().firstWhere(
-          (item) => item != null && _id(item) == serviceId.value,
-          orElse: () => null,
-        );
-    if (selected == null) return null;
+    final selected = _selectedService();
+    if (selected.isEmpty) return null;
 
     for (final key in const [
       'locationId',
@@ -239,6 +378,14 @@ class BookingController {
       if (value.isNotEmpty) return value;
     }
     return null;
+  }
+
+  String _settingText(List<String> keys, {required String fallback}) {
+    for (final key in keys) {
+      final value = _settings[key]?.toString().trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return fallback;
   }
 
   String _friendlyError(Object error) {
@@ -264,4 +411,10 @@ class BookingController {
 
   String _id(Map<String, dynamic> item) =>
       (item['id'] ?? item['objectId'] ?? '').toString().trim();
+}
+
+class _TimeRange {
+  const _TimeRange(this.start, this.end);
+  final DateTime start;
+  final DateTime end;
 }
