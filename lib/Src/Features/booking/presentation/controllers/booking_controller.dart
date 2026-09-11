@@ -29,7 +29,7 @@ class BookingController {
       final results = await Future.wait([
         _booking.services(),
         _vehicles.list(),
-        _loadLegacyDefaultLocation(),
+        _loadDefaultLocation(),
       ]);
 
       services.value = (results[0] as List<Map<String, dynamic>>)
@@ -56,7 +56,28 @@ class BookingController {
     }
   }
 
-  Future<void> _loadLegacyDefaultLocation() async {
+  Future<void> _loadDefaultLocation() async {
+    try {
+      final settings = await _booking.settings();
+      for (final key in const ['defaultLocationId', 'locationId', 'locationObjectId']) {
+        final value = settings[key]?.toString().trim() ?? '';
+        if (value.isNotEmpty) {
+          _legacyLocationId = value;
+          return;
+        }
+      }
+
+      final location = settings['location'];
+      if (location is Map) {
+        final map = location.map((k, v) => MapEntry(k.toString(), v));
+        final value = _id(map);
+        if (value.isNotEmpty) {
+          _legacyLocationId = value;
+          return;
+        }
+      }
+    } catch (_) {}
+
     try {
       final items = (await _booking.locations()).where(_hasUsableId).toList();
       final active = items.where((item) => item['active'] != false).toList();
@@ -74,6 +95,9 @@ class BookingController {
     startAt.value = null;
     try {
       _legacyLocationId ??= _locationFromSelectedService();
+      if (_legacyLocationId == null || _legacyLocationId!.isEmpty) {
+        await _loadDefaultLocation();
+      }
 
       final rawSlots = await _booking.availability(
         locationId: _legacyLocationId,
@@ -104,6 +128,9 @@ class BookingController {
     errorMessage.value = null;
     try {
       _legacyLocationId ??= _locationFromSelectedService();
+      if (_legacyLocationId == null || _legacyLocationId!.isEmpty) {
+        await _loadDefaultLocation();
+      }
       return await _booking.createAppointment({
         if (_legacyLocationId != null && _legacyLocationId!.isNotEmpty)
           'locationId': _legacyLocationId,
@@ -121,19 +148,8 @@ class BookingController {
 
   Map<String, dynamic> _normalizeSlot(Map<String, dynamic> raw) {
     final normalized = Map<String, dynamic>.from(raw);
-    final direct = _firstNonEmpty(raw, const [
-      'startAt',
-      'start',
-      'dateTime',
-      'datetime',
-      'value',
-    ]);
-    final time = _firstNonEmpty(raw, const [
-      'time',
-      'hour',
-      'label',
-      'startTime',
-    ]);
+    final direct = _firstNonEmpty(raw, const ['startAt','start','dateTime','datetime','value']);
+    final time = _firstNonEmpty(raw, const ['time','hour','label','startTime']);
 
     String resolved = direct;
     if (resolved.isEmpty && time.isNotEmpty && date.value != null) {
@@ -175,10 +191,8 @@ class BookingController {
   String _friendlyError(Object error) {
     final text = error.toString();
     final lower = text.toLowerCase();
-    if (lower.contains('locationid') ||
-        lower.contains('location id') ||
-        (lower.contains('location') && lower.contains('obrigat'))) {
-      return 'A agenda da empresa ainda não está configurada corretamente. Tente novamente em instantes.';
+    if (lower.contains('locationid') || lower.contains('location id') || (lower.contains('location') && lower.contains('obrigat'))) {
+      return 'A agenda ainda não possui um local padrão ativo. Abra Configurações da empresa e salve os horários para ativar a agenda.';
     }
     return text;
   }
@@ -192,7 +206,5 @@ class BookingController {
   }
 
   bool _hasUsableId(Map<String, dynamic> item) => _id(item).isNotEmpty;
-
-  String _id(Map<String, dynamic> item) =>
-      (item['id'] ?? item['objectId'] ?? '').toString().trim();
+  String _id(Map<String, dynamic> item) => (item['id'] ?? item['objectId'] ?? '').toString().trim();
 }
