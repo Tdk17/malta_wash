@@ -7,7 +7,8 @@ import 'package:malta_wash/Src/Features/auth/presentation/pages/company_register
 import 'package:malta_wash/Src/Features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/pages/login_page.dart';
 import 'package:malta_wash/Src/Features/auth/presentation/pages/register_page.dart';
-import 'package:malta_wash/Src/Features/booking/presentation/pages/booking_page.dart';
+import 'package:malta_wash/Src/Features/booking/presentation/pages/booking_page_v2.dart';
+import 'package:malta_wash/Src/Features/booking/presentation/pages/client_appointments_page.dart';
 import 'package:malta_wash/Src/Features/client_home/presentation/pages/client_home_page.dart';
 import 'package:malta_wash/Src/Features/common/presentation/pages/resource_detail_page.dart';
 import 'package:malta_wash/Src/Features/common/presentation/pages/resource_list_page.dart';
@@ -61,8 +62,8 @@ class AppRouter {
       ShellRoute(builder: (_, __, child) => AppShell(mode: ShellMode.client, child: child), routes: [
         GoRoute(path: RoutePaths.client, builder: (_, __) => const ClientHomePage()),
         GoRoute(path: RoutePaths.clientVehicles, builder: (_, __) => const VehiclesPage()),
-        GoRoute(path: RoutePaths.clientBooking, builder: (_, __) => const BookingPage()),
-        GoRoute(path: RoutePaths.clientAppointments, builder: (_, __) => const ResourceListPage(title: 'Meus agendamentos', subtitle: 'Acompanhe seus próximos agendamentos e o histórico de lavagens.', endpoint: Endpoints.appointments)),
+        GoRoute(path: RoutePaths.clientBooking, builder: (_, __) => const BookingPageV2()),
+        GoRoute(path: RoutePaths.clientAppointments, builder: (_, __) => const ClientAppointmentsPage()),
         GoRoute(path: RoutePaths.clientPlans, builder: (_, __) => const ResourceTabsPage(tabs: [
           ResourceTabDefinition(label: 'Planos', title: 'Planos disponíveis', subtitle: 'Escolha o plano que combina com a sua rotina.', endpoint: Endpoints.plans),
           ResourceTabDefinition(label: 'Minha assinatura', title: 'Minha assinatura', subtitle: 'Consulte status e benefícios da sua assinatura.', endpoint: Endpoints.subscriptions),
