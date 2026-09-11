@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:malta_wash/Src/Core/di/service_locator.dart';
 import 'package:malta_wash/Src/Core/http/endpoints.dart';
 import 'package:malta_wash/Src/Features/common/domain/resource_repository.dart';
@@ -14,10 +15,13 @@ class AdminSchedulePage extends StatefulWidget {
 class _AdminSchedulePageState extends State<AdminSchedulePage> {
   final _repository = sl<ResourceRepository>();
   final _search = TextEditingController();
-  List<Map<String, dynamic>> _items = const [];
+
+  List<Map<String, dynamic>> _appointments = const [];
+  List<Map<String, dynamic>> _customers = const [];
+  List<Map<String, dynamic>> _vehicles = const [];
+  List<Map<String, dynamic>> _services = const [];
   bool _loading = true;
   String? _error;
-  DateTime _selectedDay = DateTime.now();
   String _status = 'Todos';
 
   @override
@@ -34,10 +38,24 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      final data = await _repository.list(Endpoints.appointments);
-      if (mounted) setState(() => _items = data);
+      final results = await Future.wait([
+        _repository.list(Endpoints.appointments),
+        _repository.list(Endpoints.customers),
+        _repository.list(Endpoints.vehicles),
+        _repository.list(Endpoints.services),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _appointments = results[0];
+        _customers = results[1];
+        _vehicles = results[2];
+        _services = results[3];
+      });
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
@@ -47,148 +65,449 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
 
   Future<void> _cancel(Map<String, dynamic> item) async {
     final id = _id(item);
-    if (id.isEmpty) return _message('Agendamento sem identificador técnico para cancelamento.');
-    final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-      title: const Text('Cancelar agendamento?'),
-      content: const Text('O horário será liberado e o agendamento ficará como cancelado.'),
-      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Voltar')), FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Cancelar agendamento'))],
-    ));
+    if (id.isEmpty) return _message('Não foi possível identificar este agendamento.');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Cancelar agendamento?'),
+        content: const Text('O horário será liberado para outro cliente.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Voltar')),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Cancelar')),
+        ],
+      ),
+    );
     if (ok != true) return;
     try {
-      await _repository.create(Endpoints.appointmentCancel(id), const {'reason': 'Cancelado pela empresa'});
+      await _repository.create(
+        Endpoints.appointmentCancel(id),
+        const {'reason': 'Cancelado pela empresa'},
+      );
       await _load();
       _message('Agendamento cancelado.');
-    } catch (e) { _message(e.toString()); }
+    } catch (e) {
+      _message(e.toString());
+    }
   }
 
   Future<void> _reschedule(Map<String, dynamic> item) async {
     final id = _id(item);
-    if (id.isEmpty) return _message('Agendamento sem identificador técnico para reagendamento.');
-    final date = await showDatePicker(context: context, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: _date(item) ?? DateTime.now());
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_date(item) ?? DateTime.now()));
-    if (time == null) return;
-    final startAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    if (id.isEmpty) return _message('Não foi possível identificar este agendamento.');
+    final current = _date(item) ?? DateTime.now();
+    final selectedDate = await showDatePicker(
+      context: context,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: current.isBefore(DateTime.now()) ? DateTime.now() : current,
+    );
+    if (selectedDate == null || !mounted) return;
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(current),
+    );
+    if (selectedTime == null) return;
+
+    final startAt = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      selectedTime.hour,
+      selectedTime.minute,
+    );
     try {
-      await _repository.create(Endpoints.appointmentReschedule(id), {'startAt': startAt.toIso8601String()});
+      await _repository.create(
+        Endpoints.appointmentReschedule(id),
+        {'startAt': startAt.toIso8601String()},
+      );
       await _load();
       _message('Agendamento reagendado.');
-    } catch (e) { _message(e.toString()); }
+    } catch (e) {
+      _message(e.toString());
+    }
   }
 
-  Future<void> _blockDay() async {
-    final reason = TextEditingController();
-    final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-      title: Text('Bloquear ${_dateLabel(_selectedDay)}?'),
-      content: TextField(controller: reason, maxLines: 3, decoration: const InputDecoration(labelText: 'Motivo', hintText: 'Ex.: manutenção, feriado, evento interno')),
-      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Voltar')), FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Bloquear dia'))],
-    ));
-    if (ok != true) { reason.dispose(); return; }
-    final start = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-    final end = start.add(const Duration(days: 1));
-    try {
-      await _repository.create(Endpoints.blocks, {'startAt': start.toIso8601String(), 'endAt': end.toIso8601String(), 'reason': reason.text.trim(), 'allDay': true, 'active': true});
-      _message('Agenda bloqueada para ${_dateLabel(_selectedDay)}.');
-    } catch (e) { _message(e.toString()); }
-    reason.dispose();
+  void _message(String text) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
-
-  void _message(String text) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text))); }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filtered();
-    return Container(
-      decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFFFF7ED)])),
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1320),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _header(filtered.length),
+    final items = _filtered();
+    final today = DateTime.now();
+    return Padding(
+      padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 700 ? 16 : 28),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1280),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _header(today, items.length),
               const SizedBox(height: 18),
-              if (widget.calendarMode) _calendarToolbar() else _filters(),
+              _filters(),
               const SizedBox(height: 18),
-              Expanded(child: _body(filtered)),
-            ]),
+              Expanded(child: _body(items)),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _header(int count) => Container(
-    width: double.infinity, padding: const EdgeInsets.all(22),
-    decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF111827)]), borderRadius: BorderRadius.circular(24), boxShadow: const [BoxShadow(color: Color(0x220F172A), blurRadius: 26, offset: Offset(0, 12))]),
-    child: Row(children: [
-      Container(width: 48, height: 48, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFF6A00), Color(0xFFFF8A34)]), borderRadius: BorderRadius.circular(15)), child: Icon(widget.calendarMode ? Icons.calendar_month_rounded : Icons.event_available_rounded, color: Colors.white)),
-      const SizedBox(width: 15),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(widget.calendarMode ? 'Agenda' : 'Agendamentos', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)), const SizedBox(height: 4), Text(widget.calendarMode ? 'Escolha o dia, visualize horários e bloqueie datas quando necessário.' : 'Pesquise, reagende e cancele sem expor dados técnicos.', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13))])),
-      Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: Colors.white.withOpacity(.07), borderRadius: BorderRadius.circular(12)), child: Text('$count agendamentos', style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700, fontSize: 12))),
-      const SizedBox(width: 8), IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded, color: Colors.white)),
-    ]),
-  );
+  Widget _header(DateTime today, int count) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [Color(0xFF0B0F14), Color(0xFF172033)]),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: const [BoxShadow(color: Color(0x220F172A), blurRadius: 28, offset: Offset(0, 12))],
+        ),
+        child: LayoutBuilder(builder: (context, c) {
+          final compact = c.maxWidth < 620;
+          final title = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Hoje, ${DateFormat('dd/MM/yyyy').format(today)}',
+                style: const TextStyle(color: Color(0xFFFF9A52), fontSize: 11, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              const Text('Agendamentos', style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 4),
+              const Text('Cliente, veículo, placa, serviço, horário e status em uma única tela.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+            ],
+          );
+          final badge = Row(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(.08), borderRadius: BorderRadius.circular(12)),
+              child: Text('$count registros', style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w800, fontSize: 12)),
+            ),
+            const SizedBox(width: 6),
+            IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded, color: Colors.white)),
+          ]);
+          if (compact) return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [title, const SizedBox(height: 14), badge]);
+          return Row(children: [Expanded(child: title), badge]);
+        }),
+      );
 
-  Widget _calendarToolbar() => Column(children: [
-    Row(children: [Expanded(child: _dayStrip()), const SizedBox(width: 14), FilledButton.icon(onPressed: _blockDay, icon: const Icon(Icons.block_rounded), label: const Text('Bloquear dia'), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF111827), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16)))]),
-    const SizedBox(height: 12),
-    Align(alignment: Alignment.centerLeft, child: Text('Agenda de ${_dateLabel(_selectedDay)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)))),
-  ]);
-
-  Widget _filters() => Wrap(spacing: 10, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
-    SizedBox(width: 340, child: TextField(controller: _search, decoration: InputDecoration(hintText: 'Buscar cliente, veículo ou placa...', prefixIcon: const Icon(Icons.search_rounded), filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none)))),
-    for (final status in const ['Todos', 'Agendado', 'Em atendimento', 'Pronto', 'Finalizado', 'Cancelado', 'No-show']) ChoiceChip(label: Text(status), selected: _status == status, onSelected: (_) => setState(() => _status = status), selectedColor: const Color(0xFFFF6A00), labelStyle: TextStyle(color: _status == status ? Colors.white : const Color(0xFF475569), fontWeight: FontWeight.w700), side: BorderSide.none, backgroundColor: Colors.white),
-  ]);
-
-  Widget _dayStrip() {
-    final start = DateTime.now().subtract(const Duration(days: 2));
-    return SizedBox(height: 86, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: 12, separatorBuilder: (_, __) => const SizedBox(width: 9), itemBuilder: (_, i) {
-      final day = DateTime(start.year, start.month, start.day + i); final selected = _sameDay(day, _selectedDay);
-      return InkWell(onTap: () => setState(() => _selectedDay = day), borderRadius: BorderRadius.circular(18), child: AnimatedContainer(duration: const Duration(milliseconds: 160), width: 76, padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(gradient: selected ? const LinearGradient(colors: [Color(0xFFFF6A00), Color(0xFFFF8A34)]) : null, color: selected ? null : Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: selected ? const Color(0xFFFFA362) : const Color(0xFFE2E8F0))), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Text(_weekday(day), style: TextStyle(color: selected ? Colors.white70 : const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w800)), const SizedBox(height: 3), Text('${day.day}', style: TextStyle(color: selected ? Colors.white : const Color(0xFF0F172A), fontSize: 24, fontWeight: FontWeight.w900))])));
-    }));
-  }
+  Widget _filters() => Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          SizedBox(
+            width: 340,
+            child: TextField(
+              controller: _search,
+              decoration: InputDecoration(
+                hintText: 'Buscar cliente, veículo ou placa...',
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: Colors.white.withOpacity(.94),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              ),
+            ),
+          ),
+          for (final status in const ['Todos', 'Agendado', 'Em atendimento', 'Pronto', 'Finalizado', 'Cancelado'])
+            ChoiceChip(
+              label: Text(status),
+              selected: _status == status,
+              onSelected: (_) => setState(() => _status = status),
+              selectedColor: const Color(0xFFFF6A00),
+              backgroundColor: Colors.white.withOpacity(.92),
+              side: BorderSide.none,
+              labelStyle: TextStyle(
+                color: _status == status ? Colors.white : const Color(0xFF475569),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+        ],
+      );
 
   Widget _body(List<Map<String, dynamic>> items) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return _empty(Icons.cloud_off_rounded, 'Não foi possível carregar', _error!);
-    if (items.isEmpty) return _empty(Icons.event_available_rounded, 'Nenhum agendamento aqui', widget.calendarMode ? 'Este dia está livre.' : 'Nenhum resultado encontrado para os filtros atuais.');
-    return ListView.separated(itemCount: items.length, separatorBuilder: (_, __) => const SizedBox(height: 10), itemBuilder: (_, i) => _appointmentCard(items[i]));
+    if (items.isEmpty) return _empty(Icons.event_available_rounded, 'Nenhum agendamento encontrado', 'Os agendamentos feitos pelos clientes aparecerão aqui.');
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView.separated(
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (_, i) => _appointmentCard(items[i]),
+      ),
+    );
   }
 
   Widget _appointmentCard(Map<String, dynamic> item) {
-    final customer = _first(item, ['customerName', 'clientName', 'name'], nested: ['customer', 'name']);
-    final vehicle = _first(item, ['vehicleName', 'model'], nested: ['vehicle', 'name']);
-    final plate = _first(item, ['plate', 'licensePlate'], nested: ['vehicle', 'plate']);
-    final service = _first(item, ['serviceName'], nested: ['service', 'name']);
-    final status = _pick(item, ['status', 'state', 'appointmentStatus']);
-    return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F0))), child: Row(children: [
-      Container(width: 54, height: 54, decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.local_car_wash_rounded, color: Color(0xFFFF8A34))), const SizedBox(width: 15),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(customer, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)), const SizedBox(height: 4), Text([vehicle, plate].where((e) => e != '—').join(' • '), style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)), if (service != '—') Text(service, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12))])),
-      Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(_when(item), style: const TextStyle(fontWeight: FontWeight.w900)), const SizedBox(height: 7), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFFF6A00).withOpacity(.10), borderRadius: BorderRadius.circular(999)), child: Text(status, style: const TextStyle(color: Color(0xFFC45200), fontWeight: FontWeight.w800, fontSize: 11)))]),
-      const SizedBox(width: 10), PopupMenuButton<String>(tooltip: 'Ações', onSelected: (value) { if (value == 'reschedule') _reschedule(item); if (value == 'cancel') _cancel(item); }, itemBuilder: (_) => const [PopupMenuItem(value: 'reschedule', child: ListTile(leading: Icon(Icons.edit_calendar_rounded), title: Text('Reagendar'), contentPadding: EdgeInsets.zero)), PopupMenuItem(value: 'cancel', child: ListTile(leading: Icon(Icons.cancel_outlined, color: Color(0xFFB91C1C)), title: Text('Cancelar'), contentPadding: EdgeInsets.zero))]),
-    ]));
+    final vehicle = _vehicleFor(item);
+    final customer = _customerFor(item, vehicle);
+    final service = _serviceFor(item);
+    final customerName = _displayName(customer, item);
+    final model = _firstNonEmpty([
+      _value(vehicle, ['model', 'vehicleModel', 'name']),
+      _value(item, ['vehicleName', 'vehicleModel', 'model']),
+      _nested(item, 'vehicle', ['model', 'name']),
+    ], fallback: 'Veículo não informado');
+    final plate = _firstNonEmpty([
+      _value(vehicle, ['plate', 'licensePlate']),
+      _value(item, ['plate', 'licensePlate']),
+      _nested(item, 'vehicle', ['plate', 'licensePlate']),
+    ]);
+    final serviceName = _firstNonEmpty([
+      _value(service, ['name', 'title']),
+      _value(item, ['serviceName']),
+      _nested(item, 'service', ['name', 'title']),
+    ]);
+    final status = _statusLabel(_value(item, ['status', 'state', 'appointmentStatus']));
+    final when = _date(item);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(.94),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [BoxShadow(color: Color(0x0B0F172A), blurRadius: 20, offset: Offset(0, 8))],
+      ),
+      child: LayoutBuilder(builder: (context, c) {
+        final compact = c.maxWidth < 650;
+        final details = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(customerName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+            const SizedBox(height: 5),
+            Text(
+              [model, if (plate.isNotEmpty) plate].join(' • '),
+              style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700),
+            ),
+            if (serviceName.isNotEmpty) ...[
+              const SizedBox(height: 3),
+              Text(serviceName, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5)),
+            ],
+          ],
+        );
+        final meta = Row(mainAxisSize: MainAxisSize.min, children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(when == null ? 'Data não informada' : DateFormat('dd/MM/yyyy').format(when), style: const TextStyle(fontWeight: FontWeight.w900)),
+              const SizedBox(height: 3),
+              Text(when == null ? '--:--' : DateFormat('HH:mm').format(when), style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w800)),
+              const SizedBox(height: 7),
+              _statusBadge(status),
+            ],
+          ),
+          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            tooltip: 'Ações',
+            onSelected: (value) {
+              if (value == 'reschedule') _reschedule(item);
+              if (value == 'cancel') _cancel(item);
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'reschedule', child: Text('Reagendar')),
+              PopupMenuItem(value: 'cancel', child: Text('Cancelar')),
+            ],
+          ),
+        ]);
+
+        final icon = Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xFF111827), Color(0xFF1E293B)]),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Icon(Icons.local_car_wash_rounded, color: Color(0xFFFF8A34)),
+        );
+
+        if (compact) {
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [icon, const SizedBox(width: 12), Expanded(child: details)]),
+            const SizedBox(height: 14),
+            Align(alignment: Alignment.centerRight, child: meta),
+          ]);
+        }
+        return Row(children: [icon, const SizedBox(width: 15), Expanded(child: details), meta]);
+      }),
+    );
   }
 
-  Widget _empty(IconData icon, String title, String text) => Center(child: Container(constraints: const BoxConstraints(maxWidth: 500), padding: const EdgeInsets.all(28), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFFE2E8F0))), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 42, color: const Color(0xFFFF6A00)), const SizedBox(height: 12), Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)), const SizedBox(height: 7), Text(text, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFF64748B)))])));
+  Widget _statusBadge(String status) {
+    final color = switch (status) {
+      'Finalizado' => const Color(0xFF067647),
+      'Pronto' => const Color(0xFF175CD3),
+      'Em atendimento' => const Color(0xFFB54708),
+      'Cancelado' => const Color(0xFFB42318),
+      _ => const Color(0xFF475467),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: color.withOpacity(.10), borderRadius: BorderRadius.circular(999)),
+      child: Text(status, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900)),
+    );
+  }
+
+  Widget _empty(IconData icon, String title, String text) => Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(.94),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: 42, color: const Color(0xFFFF6A00)),
+            const SizedBox(height: 12),
+            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 7),
+            Text(text, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFF64748B))),
+          ]),
+        ),
+      );
 
   List<Map<String, dynamic>> _filtered() {
     final q = _search.text.trim().toLowerCase();
-    return _items.where((item) {
-      if (widget.calendarMode) { final date = _date(item); if (date != null && !_sameDay(date, _selectedDay)) return false; }
-      final status = _pick(item, ['status', 'state', 'appointmentStatus']);
-      if (!widget.calendarMode && _status != 'Todos' && status.toLowerCase() != _status.toLowerCase()) return false;
+    final items = [..._appointments];
+    items.sort((a, b) {
+      final da = _date(a);
+      final db = _date(b);
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return da.compareTo(db);
+    });
+
+    return items.where((item) {
+      final vehicle = _vehicleFor(item);
+      final customer = _customerFor(item, vehicle);
+      final status = _statusLabel(_value(item, ['status', 'state', 'appointmentStatus']));
+      if (_status != 'Todos' && status != _status) return false;
       if (q.isEmpty) return true;
-      return [_pick(item, ['customerName', 'clientName', 'name']), _first(item, const [], nested: ['customer', 'name']), _pick(item, ['vehicleName', 'model']), _pick(item, ['plate', 'licensePlate'])].join(' ').toLowerCase().contains(q);
+      final haystack = [
+        _displayName(customer, item),
+        _value(vehicle, ['model', 'vehicleModel', 'name']),
+        _value(vehicle, ['plate', 'licensePlate']),
+        _value(item, ['vehicleName', 'vehicleModel', 'plate', 'licensePlate']),
+      ].join(' ').toLowerCase();
+      return haystack.contains(q);
     }).toList();
   }
 
-  String _id(Map<String, dynamic> item) => _pick(item, ['id', 'objectId', '_id'], fallback: '');
-  DateTime? _date(Map<String, dynamic> item) { for (final key in const ['scheduledAt','date','startAt','appointmentAt','startsAt']) { final v=item[key]; if(v is String){final d=DateTime.tryParse(v); if(d!=null)return d.toLocal();}} return null; }
-  bool _sameDay(DateTime a, DateTime b) => a.year==b.year && a.month==b.month && a.day==b.day;
-  String _weekday(DateTime d) => const ['SEG','TER','QUA','QUI','SEX','SÁB','DOM'][d.weekday-1];
-  String _dateLabel(DateTime d) => '${d.day.toString().padLeft(2,'0')}/${d.month.toString().padLeft(2,'0')}/${d.year}';
-  String _when(Map<String,dynamic> item) { final d=_date(item); return d==null?'Horário —':'${_dateLabel(d)} • ${d.hour.toString().padLeft(2,'0')}:${d.minute.toString().padLeft(2,'0')}'; }
-  String _pick(Map<String,dynamic> item,List<String> keys,{String fallback='—'}) { for(final k in keys){final v=item[k]; if(v!=null && v is! Map && v.toString().trim().isNotEmpty)return v.toString();} return fallback; }
-  String _first(Map<String,dynamic> item,List<String> keys,{List<String>? nested}) { final direct=_pick(item,keys,fallback:''); if(direct.isNotEmpty)return direct; dynamic v=item; if(nested!=null){for(final p in nested){if(v is Map){v=v[p];}else{return '—';}} if(v!=null&&v.toString().trim().isNotEmpty)return v.toString();} return '—'; }
+  Map<String, dynamic> _vehicleFor(Map<String, dynamic> appointment) {
+    final nested = appointment['vehicle'];
+    if (nested is Map) return nested.map((k, v) => MapEntry(k.toString(), v));
+    final id = _firstNonEmpty([
+      _value(appointment, ['vehicleId', 'carId', 'vehicleObjectId']),
+      _pointerId(appointment['vehicle']),
+    ]);
+    if (id.isEmpty) return const {};
+    return _findById(_vehicles, id);
+  }
+
+  Map<String, dynamic> _customerFor(Map<String, dynamic> appointment, Map<String, dynamic> vehicle) {
+    final nested = appointment['customer'] ?? appointment['client'];
+    if (nested is Map) return nested.map((k, v) => MapEntry(k.toString(), v));
+    final id = _firstNonEmpty([
+      _value(appointment, ['customerId', 'clientId', 'userId', 'customerObjectId']),
+      _pointerId(appointment['customer']),
+      _value(vehicle, ['customerId', 'clientId', 'userId', 'ownerId']),
+      _pointerId(vehicle['customer']),
+    ]);
+    if (id.isEmpty) return const {};
+    return _findById(_customers, id);
+  }
+
+  Map<String, dynamic> _serviceFor(Map<String, dynamic> appointment) {
+    final nested = appointment['service'];
+    if (nested is Map) return nested.map((k, v) => MapEntry(k.toString(), v));
+    final id = _firstNonEmpty([
+      _value(appointment, ['serviceId', 'serviceObjectId']),
+      _pointerId(appointment['service']),
+    ]);
+    if (id.isEmpty) return const {};
+    return _findById(_services, id);
+  }
+
+  Map<String, dynamic> _findById(List<Map<String, dynamic>> list, String id) {
+    for (final item in list) {
+      if (_id(item) == id) return item;
+    }
+    return const {};
+  }
+
+  String _displayName(Map<String, dynamic> customer, Map<String, dynamic> appointment) => _firstNonEmpty([
+        _value(customer, ['name', 'fullName', 'customerName']),
+        _value(appointment, ['customerName', 'clientName', 'name']),
+        _nested(appointment, 'customer', ['name', 'fullName']),
+      ], fallback: 'Cliente não informado');
+
+  DateTime? _date(Map<String, dynamic> item) {
+    for (final key in const ['startAt', 'scheduledAt', 'appointmentAt', 'startsAt', 'date']) {
+      final raw = item[key];
+      if (raw == null) continue;
+      final value = raw is Map ? (raw['iso'] ?? raw['date'] ?? raw['value'])?.toString() : raw.toString();
+      if (value == null || value.isEmpty) continue;
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) return parsed.toLocal();
+    }
+    return null;
+  }
+
+  String _statusLabel(String raw) {
+    final value = raw.trim().toUpperCase().replaceAll('-', '_').replaceAll(' ', '_');
+    return switch (value) {
+      'SCHEDULED' || 'BOOKED' || 'PENDING' || 'CONFIRMED' => 'Agendado',
+      'IN_PROGRESS' || 'INPROGRESS' || 'STARTED' => 'Em atendimento',
+      'READY' => 'Pronto',
+      'FINISHED' || 'COMPLETED' || 'DONE' => 'Finalizado',
+      'CANCELLED' || 'CANCELED' => 'Cancelado',
+      'NO_SHOW' || 'NOSHOW' => 'No-show',
+      _ => raw.trim().isEmpty ? 'Agendado' : raw,
+    };
+  }
+
+  String _id(Map<String, dynamic> item) => _firstNonEmpty([
+        _value(item, ['id', 'objectId', '_id']),
+      ]);
+
+  String _pointerId(dynamic value) {
+    if (value is Map) {
+      return _firstNonEmpty([
+        value['objectId']?.toString() ?? '',
+        value['id']?.toString() ?? '',
+      ]);
+    }
+    return '';
+  }
+
+  String _nested(Map<String, dynamic> item, String key, List<String> keys) {
+    final nested = item[key];
+    if (nested is! Map) return '';
+    for (final k in keys) {
+      final value = nested[k]?.toString().trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
+  String _value(Map<String, dynamic> item, List<String> keys) {
+    for (final key in keys) {
+      final value = item[key];
+      if (value != null && value is! Map) {
+        final text = value.toString().trim();
+        if (text.isNotEmpty) return text;
+      }
+    }
+    return '';
+  }
+
+  String _firstNonEmpty(List<String> values, {String fallback = ''}) {
+    for (final value in values) {
+      if (value.trim().isNotEmpty) return value.trim();
+    }
+    return fallback;
+  }
 }
