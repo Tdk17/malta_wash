@@ -60,12 +60,7 @@ class _CenterCanvas extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFF8FAFC),
-                  Color(0xFFF1F5F9),
-                  Color(0xFFEEF4FF),
-                  Color(0xFFFFF7ED),
-                ],
+                colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF4FF), Color(0xFFFFF7ED)],
                 stops: [0, .42, .74, 1],
               ),
             ),
@@ -132,11 +127,7 @@ class _Navigation extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
                   decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withOpacity(.06)), color: Colors.white.withOpacity(.025)),
-                  child: const Row(children: [
-                    Icon(Icons.logout_rounded, color: Color(0xFF8D98A8), size: 19),
-                    SizedBox(width: 11),
-                    Text('Sair', style: TextStyle(color: Color(0xFFA8B1BE), fontWeight: FontWeight.w700, fontSize: 13)),
-                  ]),
+                  child: const Row(children: [Icon(Icons.logout_rounded, color: Color(0xFF8D98A8), size: 19), SizedBox(width: 11), Text('Sair', style: TextStyle(color: Color(0xFFA8B1BE), fontWeight: FontWeight.w700, fontSize: 13))]),
                 ),
               ),
             ),
@@ -160,7 +151,6 @@ class _Navigation extends StatelessWidget {
     _NavItem('Agendamentos', Icons.event_available_rounded, RoutePaths.adminAppointments),
     _NavItem('Atendimentos', Icons.local_car_wash_rounded, RoutePaths.adminOperation),
     _NavItem('Clientes', Icons.people_alt_rounded, RoutePaths.adminCustomers),
-    _NavItem('Veículos', Icons.directions_car_filled_rounded, RoutePaths.adminVehicles),
     _NavItem('Serviços', Icons.cleaning_services_rounded, RoutePaths.adminServices),
     _NavItem('Planos', Icons.workspace_premium_rounded, RoutePaths.adminPlans),
     _NavItem('Fidelidade', Icons.loyalty_rounded, RoutePaths.adminLoyalty),
@@ -180,7 +170,6 @@ class _Navigation extends StatelessWidget {
 class _NavTile extends StatelessWidget {
   const _NavTile({required this.item});
   final _NavItem item;
-
   @override
   Widget build(BuildContext context) {
     final active = GoRouterState.of(context).uri.path == item.route;
@@ -216,38 +205,26 @@ class _NavTile extends StatelessWidget {
 
 class _GridPainter extends CustomPainter {
   const _GridPainter();
-
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = const Color(0xFF334155).withOpacity(.13)..strokeWidth = .6;
     const gap = 28.0;
-    for (double x = 0; x <= size.width; x += gap) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y <= size.height; y += gap) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
+    for (double x = 0; x <= size.width; x += gap) canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    for (double y = 0; y <= size.height; y += gap) canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
   }
-
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _CenterGridPainter extends CustomPainter {
   const _CenterGridPainter();
-
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = const Color(0xFF64748B).withOpacity(.045)..strokeWidth = .55;
     const gap = 36.0;
-    for (double x = 0; x <= size.width; x += gap) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y <= size.height; y += gap) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
+    for (double x = 0; x <= size.width; x += gap) canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    for (double y = 0; y <= size.height; y += gap) canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
   }
-
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
