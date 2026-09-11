@@ -9,7 +9,7 @@ import 'package:malta_wash/Src/Features/auth/presentation/pages/register_page.da
 import 'package:malta_wash/Src/Features/booking/presentation/pages/booking_page_v2.dart';
 import 'package:malta_wash/Src/Features/booking/presentation/pages/client_appointments_page.dart';
 import 'package:malta_wash/Src/Features/client_home/presentation/pages/client_home_page.dart';
-import 'package:malta_wash/Src/Features/common/presentation/pages/resource_detail_page.dart';
+import 'package:malta_wash/Src/Features/client_home/presentation/pages/client_profile_page.dart';
 import 'package:malta_wash/Src/Features/common/presentation/pages/resource_list_page.dart';
 import 'package:malta_wash/Src/Features/common/presentation/pages/resource_tabs_page.dart';
 import 'package:malta_wash/Src/Features/dashboard/presentation/pages/admin_dashboard_page.dart';
@@ -79,7 +79,7 @@ class AppRouter {
             labels: {'planName': 'Plano', 'status': 'Status', 'price': 'Valor', 'nextBillingAt': 'Próxima cobrança'},
           ),
         ])),
-        GoRoute(path: RoutePaths.clientProfile, builder: (_, __) => const ResourceDetailPage(title: 'Perfil', subtitle: 'Seus dados pessoais e preferências.', endpoint: Endpoints.profile)),
+        GoRoute(path: RoutePaths.clientProfile, builder: (_, __) => const ClientProfilePage()),
       ]),
 
       ShellRoute(builder: (_, __, child) => AppShell(mode: ShellMode.admin, child: child), routes: [
