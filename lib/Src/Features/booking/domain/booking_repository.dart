@@ -1,5 +1,6 @@
 abstract interface class BookingRepository {
   Future<List<Map<String, dynamic>>> locations();
+  Future<Map<String, dynamic>> settings();
   Future<List<Map<String, dynamic>>> services();
   Future<List<Map<String, dynamic>>> addons();
   Future<List<Map<String, dynamic>>> availability({
