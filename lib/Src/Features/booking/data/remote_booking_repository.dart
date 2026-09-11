@@ -9,30 +9,17 @@ class RemoteBookingRepository implements BookingRepository {
 
   List<Map<String, dynamic>> _list(dynamic raw) {
     if (raw is List) {
-      return raw
-          .whereType<Map>()
-          .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-          .toList();
+      return raw.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList();
     }
-
     if (raw is Map) {
       final map = raw.map((k, v) => MapEntry(k.toString(), v));
-      for (final key in const [
-        'items',
-        'data',
-        'results',
-        'locations',
-        'services',
-        'addons',
-        'slots',
-      ]) {
+      for (final key in const ['items','data','results','locations','services','addons','slots']) {
         if (map[key] != null) {
           final result = _list(map[key]);
           if (result.isNotEmpty || map[key] is List) return result;
         }
       }
     }
-
     return const [];
   }
 
@@ -43,16 +30,16 @@ class RemoteBookingRepository implements BookingRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> locations() async =>
-      _list(await _http.request(Endpoints.locations));
+  Future<List<Map<String, dynamic>>> locations() async => _list(await _http.request(Endpoints.locations));
 
   @override
-  Future<List<Map<String, dynamic>>> services() async =>
-      _list(await _http.request(Endpoints.services));
+  Future<Map<String, dynamic>> settings() async => _map(await _http.request(Endpoints.settings));
 
   @override
-  Future<List<Map<String, dynamic>>> addons() async =>
-      _list(await _http.request(Endpoints.serviceAddons));
+  Future<List<Map<String, dynamic>>> services() async => _list(await _http.request(Endpoints.services));
+
+  @override
+  Future<List<Map<String, dynamic>>> addons() async => _list(await _http.request(Endpoints.serviceAddons));
 
   @override
   Future<List<Map<String, dynamic>>> availability({
@@ -75,9 +62,5 @@ class RemoteBookingRepository implements BookingRepository {
 
   @override
   Future<Map<String, dynamic>> createAppointment(Map<String, dynamic> payload) async =>
-      _map(await _http.request(
-        Endpoints.appointments,
-        method: HttpMethod.post,
-        data: payload,
-      ));
+      _map(await _http.request(Endpoints.appointments, method: HttpMethod.post, data: payload));
 }
