@@ -47,6 +47,7 @@ class AppRouter {
       if (role == null || role.isEmpty) return null;
       final isSuperAdmin = role.contains('SUPER');
       final isAdmin = isSuperAdmin || role.contains('ADMIN') || role.contains('MANAGER') || role.contains('GERENTE') || role.contains('ATENDENTE') || role.contains('TECH') || role.contains('LAVADOR');
+      if (path == RoutePaths.adminCalendar) return RoutePaths.adminAppointments;
       if (path.startsWith('/super-admin') && !isSuperAdmin) return isAdmin ? RoutePaths.admin : RoutePaths.client;
       if (path.startsWith('/admin') && !isAdmin) return RoutePaths.client;
       if (path.startsWith('/cliente') && isAdmin) return isSuperAdmin ? RoutePaths.superAdmin : RoutePaths.admin;
@@ -73,7 +74,7 @@ class AppRouter {
 
       ShellRoute(builder: (_, __, child) => AppShell(mode: ShellMode.admin, child: child), routes: [
         GoRoute(path: RoutePaths.admin, builder: (_, __) => const AdminDashboardPage()),
-        GoRoute(path: RoutePaths.adminCalendar, builder: (_, __) => const AdminSchedulePage(calendarMode: true)),
+        GoRoute(path: RoutePaths.adminCalendar, builder: (_, __) => const AdminSchedulePage()),
         GoRoute(path: RoutePaths.adminAppointments, builder: (_, __) => const AdminSchedulePage()),
         GoRoute(path: RoutePaths.adminOperation, builder: (_, __) => const OperationBoardPage()),
         GoRoute(path: RoutePaths.adminCustomers, builder: (_, __) => const AdminDirectoryPage()),
