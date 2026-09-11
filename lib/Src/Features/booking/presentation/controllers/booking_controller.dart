@@ -59,7 +59,11 @@ class BookingController {
   Future<void> _loadDefaultLocation() async {
     try {
       final settings = await _booking.settings();
-      for (final key in const ['defaultLocationId', 'locationId', 'locationObjectId']) {
+      for (final key in const [
+        'defaultLocationId',
+        'locationId',
+        'locationObjectId',
+      ]) {
         final value = settings[key]?.toString().trim() ?? '';
         if (value.isNotEmpty) {
           _legacyLocationId = value;
@@ -89,10 +93,14 @@ class BookingController {
   }
 
   Future<void> loadSlots() async {
-    if (vehicleId.value == null || serviceId.value == null || date.value == null) return;
+    if (vehicleId.value == null || serviceId.value == null || date.value == null) {
+      return;
+    }
+
     isLoading.value = true;
     errorMessage.value = null;
     startAt.value = null;
+
     try {
       _legacyLocationId ??= _locationFromSelectedService();
       if (_legacyLocationId == null || _legacyLocationId!.isEmpty) {
@@ -108,7 +116,9 @@ class BookingController {
 
       slots.value = rawSlots
           .map(_normalizeSlot)
-          .where((slot) => (slot['startAt'] ?? '').toString().trim().isNotEmpty)
+          .where((slot) => slot['available'] != false)
+          .where((slot) =>
+              (slot['startAt'] ?? '').toString().trim().isNotEmpty)
           .toList();
     } catch (e) {
       errorMessage.value = _friendlyError(e);
@@ -119,7 +129,9 @@ class BookingController {
   }
 
   Future<Map<String, dynamic>?> confirm() async {
-    if (vehicleId.value == null || serviceId.value == null || startAt.value == null) {
+    if (vehicleId.value == null ||
+        serviceId.value == null ||
+        startAt.value == null) {
       errorMessage.value = 'Preencha todas as etapas obrigatórias.';
       return null;
     }
@@ -131,6 +143,7 @@ class BookingController {
       if (_legacyLocationId == null || _legacyLocationId!.isEmpty) {
         await _loadDefaultLocation();
       }
+
       return await _booking.createAppointment({
         if (_legacyLocationId != null && _legacyLocationId!.isNotEmpty)
           'locationId': _legacyLocationId,
@@ -148,23 +161,59 @@ class BookingController {
 
   Map<String, dynamic> _normalizeSlot(Map<String, dynamic> raw) {
     final normalized = Map<String, dynamic>.from(raw);
-    final direct = _firstNonEmpty(raw, const ['startAt','start','dateTime','datetime','value']);
-    final time = _firstNonEmpty(raw, const ['time','hour','label','startTime']);
+    final direct = _firstNonEmpty(raw, const [
+      'startAt',
+      'start',
+      'dateTime',
+      'datetime',
+      'value',
+      'startsAt',
+      'slotStart',
+    ]);
+    final time = _firstNonEmpty(raw, const [
+      'time',
+      'hour',
+      'label',
+      'startTime',
+      'startsAtTime',
+    ]);
 
-    String resolved = direct;
-    if (resolved.isEmpty && time.isNotEmpty && date.value != null) {
-      final datePart = DateFormat('yyyy-MM-dd').format(date.value!);
-      final cleaned = time.trim();
-      if (RegExp(r'^\d{1,2}:\d{2}$').hasMatch(cleaned)) {
-        resolved = '${datePart}T${cleaned.padLeft(5, '0')}:00';
-      }
+    String resolved = direct.trim();
+    String display = time.trim();
+
+    if (_looksLikeTime(resolved) && date.value != null) {
+      display = display.isNotEmpty ? display : resolved;
+      resolved = _combineDateAndTime(resolved);
+    } else if (resolved.isEmpty && _looksLikeTime(display) && date.value != null) {
+      resolved = _combineDateAndTime(display);
     }
 
     normalized['startAt'] = resolved;
-    if ((normalized['start'] ?? '').toString().trim().isEmpty && time.isNotEmpty) {
-      normalized['start'] = time;
+    if ((normalized['start'] ?? '').toString().trim().isEmpty) {
+      normalized['start'] = display.isNotEmpty ? display : _timeFromDateTime(resolved);
     }
+    normalized['available'] = normalized['available'] != false;
     return normalized;
+  }
+
+  bool _looksLikeTime(String value) =>
+      RegExp(r'^\d{1,2}:\d{2}(?::\d{2})?$').hasMatch(value.trim());
+
+  String _combineDateAndTime(String time) {
+    final datePart = DateFormat('yyyy-MM-dd').format(date.value!);
+    final pieces = time.trim().split(':');
+    final hour = pieces.first.padLeft(2, '0');
+    final minute = pieces.length > 1 ? pieces[1].padLeft(2, '0') : '00';
+    final second = pieces.length > 2 ? pieces[2].padLeft(2, '0') : '00';
+    return '${datePart}T$hour:$minute:$second';
+  }
+
+  String _timeFromDateTime(String value) {
+    if (value.isEmpty) return '';
+    final parsed = DateTime.tryParse(value);
+    if (parsed != null) return DateFormat('HH:mm').format(parsed);
+    final match = RegExp(r'T(\d{2}:\d{2})').firstMatch(value);
+    return match?.group(1) ?? value;
   }
 
   String? _locationFromSelectedService() {
@@ -174,7 +223,11 @@ class BookingController {
         );
     if (selected == null) return null;
 
-    for (final key in const ['locationId', 'defaultLocationId', 'locationObjectId']) {
+    for (final key in const [
+      'locationId',
+      'defaultLocationId',
+      'locationObjectId',
+    ]) {
       final value = selected[key]?.toString().trim() ?? '';
       if (value.isNotEmpty) return value;
     }
@@ -191,7 +244,9 @@ class BookingController {
   String _friendlyError(Object error) {
     final text = error.toString();
     final lower = text.toLowerCase();
-    if (lower.contains('locationid') || lower.contains('location id') || (lower.contains('location') && lower.contains('obrigat'))) {
+    if (lower.contains('locationid') ||
+        lower.contains('location id') ||
+        (lower.contains('location') && lower.contains('obrigat'))) {
       return 'A agenda ainda não possui um local padrão ativo. Abra Configurações da empresa e salve os horários para ativar a agenda.';
     }
     return text;
@@ -206,5 +261,7 @@ class BookingController {
   }
 
   bool _hasUsableId(Map<String, dynamic> item) => _id(item).isNotEmpty;
-  String _id(Map<String, dynamic> item) => (item['id'] ?? item['objectId'] ?? '').toString().trim();
+
+  String _id(Map<String, dynamic> item) =>
+      (item['id'] ?? item['objectId'] ?? '').toString().trim();
 }
