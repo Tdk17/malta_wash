@@ -26,9 +26,6 @@ class _AdminCommercialConfigPageState extends State<AdminCommercialConfigPage> {
   bool _saving = false;
   String? _error;
 
-  bool get _plans => widget.mode == CommercialConfigMode.plans;
-  String get _endpoint => _plans ? Endpoints.plans : Endpoints.loyalty;
-
   @override
   void initState() {
     super.initState();
@@ -47,7 +44,7 @@ class _AdminCommercialConfigPageState extends State<AdminCommercialConfigPage> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final data = await _repository.list(_endpoint);
+      final data = await _repository.list(Endpoints.plans);
       if (mounted) setState(() => _items = data);
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
@@ -61,31 +58,26 @@ class _AdminCommercialConfigPageState extends State<AdminCommercialConfigPage> {
     setState(() => _saving = true);
     try {
       final amount = double.tryParse(_value.text.replaceAll(',', '.')) ?? 0;
-      final payload = _plans
-          ? <String, dynamic>{
-              'name': _name.text.trim(),
-              'description': _description.text.trim(),
-              'price': amount,
-              'billingCycle': 'MONTHLY',
-              'active': true,
-              'paymentProvider': 'MERCADO_PAGO',
-              'benefits': _benefit.text.trim(),
-            }
-          : <String, dynamic>{
-              'name': _name.text.trim(),
-              'description': _description.text.trim(),
-              'ruleType': 'POINTS',
-              'pointsPerPurchase': amount,
-              'reward': _benefit.text.trim(),
-              'active': true,
-            };
-      await _repository.create(_endpoint, payload);
+      final payload = <String, dynamic>{
+        'name': _name.text.trim(),
+        'description': _description.text.trim(),
+        'price': amount,
+        'billingCycle': 'MONTHLY',
+        'active': true,
+        'paymentProvider': 'MERCADO_PAGO',
+        'benefits': _benefit.text.trim(),
+      };
+      await _repository.create(Endpoints.plans, payload);
       _name.clear();
       _description.clear();
       _value.clear();
       _benefit.clear();
       await _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_plans ? 'Plano salvo.' : 'Regra de fidelidade salva.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Plano de fidelidade salvo.')),
+        );
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
@@ -135,15 +127,12 @@ class _AdminCommercialConfigPageState extends State<AdminCommercialConfigPage> {
           boxShadow: const [BoxShadow(color: Color(0x220F172A), blurRadius: 26, offset: Offset(0, 12))],
         ),
         child: Row(children: [
-          Container(width: 48, height: 48, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFF6A00), Color(0xFFFF8A34)]), borderRadius: BorderRadius.circular(15)), child: Icon(_plans ? Icons.workspace_premium_rounded : Icons.loyalty_rounded, color: Colors.white)),
+          Container(width: 48, height: 48, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFF6A00), Color(0xFFFF8A34)]), borderRadius: BorderRadius.circular(15)), child: const Icon(Icons.loyalty_rounded, color: Colors.white)),
           const SizedBox(width: 15),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_plans ? 'Planos de assinatura' : 'Programa de fidelidade', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 4),
-            Text(
-              _plans ? 'Cadastre os planos da empresa. O backend poderá sincronizar a cobrança recorrente com o Mercado Pago.' : 'Defina como o cliente acumula pontos e qual benefício recebe.',
-              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-            ),
+          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Planos de fidelidade', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
+            SizedBox(height: 4),
+            Text('Crie um único plano com valor e benefícios. Não existe mais uma configuração separada de fidelidade.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
           ])),
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded, color: Colors.white)),
         ]),
@@ -155,29 +144,27 @@ class _AdminCommercialConfigPageState extends State<AdminCommercialConfigPage> {
         child: Form(
           key: _formKey,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_plans ? 'Novo plano' : 'Nova regra', style: const TextStyle(color: Color(0xFF0F172A), fontSize: 18, fontWeight: FontWeight.w900)),
+            const Text('Novo plano de fidelidade', style: TextStyle(color: Color(0xFF0F172A), fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 18),
-            _field(_name, _plans ? 'Nome do plano' : 'Nome da fidelidade', 'Obrigatório'),
+            _field(_name, 'Nome do plano', 'Obrigatório'),
             const SizedBox(height: 12),
             _field(_description, 'Descrição', 'Obrigatório', maxLines: 3),
             const SizedBox(height: 12),
-            _field(_value, _plans ? 'Valor mensal (R\$)' : 'Pontos por compra', 'Informe um valor válido', numeric: true),
+            _field(_value, 'Valor mensal (R\$)', 'Informe um valor válido', numeric: true),
             const SizedBox(height: 12),
-            _field(_benefit, _plans ? 'Benefícios do plano' : 'Recompensa', 'Obrigatório', maxLines: 3),
-            if (_plans) ...[
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFBFDBFE))),
-                child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF2563EB), size: 18),
-                  SizedBox(width: 9),
-                  Expanded(child: Text('Integração preparada para Mercado Pago. A criação efetiva da assinatura e do pagamento deve ocorrer no backend.', style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 12, height: 1.4, fontWeight: FontWeight.w600))),
-                ]),
-              ),
-            ],
+            _field(_benefit, 'Benefícios e vantagens', 'Obrigatório', maxLines: 3),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFBFDBFE))),
+              child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF2563EB), size: 18),
+                SizedBox(width: 9),
+                Expanded(child: Text('A cobrança recorrente fica preparada para o Mercado Pago e deve ser criada pelo backend quando o cliente assinar o plano.', style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 12, height: 1.4, fontWeight: FontWeight.w600))),
+              ]),
+            ),
             const SizedBox(height: 18),
-            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: _saving ? null : _save, style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF6A00), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))), icon: _saving ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.add_rounded), label: Text(_plans ? 'Criar plano' : 'Criar fidelidade'))),
+            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: _saving ? null : _save, style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF6A00), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))), icon: _saving ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.add_rounded), label: const Text('Criar plano de fidelidade'))),
           ]),
         ),
       );
@@ -197,7 +184,7 @@ class _AdminCommercialConfigPageState extends State<AdminCommercialConfigPage> {
   Widget _list() {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return Center(child: Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C))));
-    if (_items.isEmpty) return Center(child: Container(padding: const EdgeInsets.all(28), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: const Color(0xFFE2E8F0))), child: Text(_plans ? 'Nenhum plano cadastrado ainda.' : 'Nenhuma regra de fidelidade cadastrada ainda.', style: const TextStyle(fontWeight: FontWeight.w800))));
+    if (_items.isEmpty) return Center(child: Container(padding: const EdgeInsets.all(28), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: const Color(0xFFE2E8F0))), child: const Text('Nenhum plano de fidelidade cadastrado ainda.', style: TextStyle(fontWeight: FontWeight.w800))));
     return SingleChildScrollView(child: ResourceTable(items: _items));
   }
 }
