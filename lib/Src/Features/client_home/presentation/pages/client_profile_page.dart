@@ -51,13 +51,23 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
   }
 
   Future<void> _save() async {
+    final name = _name.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe seu nome.')),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
     try {
-      await _repository.patch(Endpoints.profile, {
-        'name': _name.text.trim(),
-        'email': _email.text.trim(),
+      final updated = await _repository.patch(Endpoints.profile, {
+        'name': name,
         'phone': _phone.text.trim(),
       });
+      _name.text = _pick(updated, const ['name'], fallback: name);
+      _phone.text = _pick(updated, const ['phone'], fallback: _phone.text.trim());
+      _email.text = _pick(updated, const ['email'], fallback: _email.text);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Perfil atualizado.')),
@@ -74,14 +84,18 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
     }
   }
 
-  String _pick(Map<String, dynamic> item, List<String> keys) {
+  String _pick(
+    Map<String, dynamic> item,
+    List<String> keys, {
+    String fallback = '',
+  }) {
     for (final key in keys) {
       final value = item[key];
       if (value != null && value is! Map && value.toString().trim().isNotEmpty) {
         return value.toString();
       }
     }
-    return '';
+    return fallback;
   }
 
   @override
@@ -130,7 +144,14 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
                   child: Column(children: [
                     _field(_name, 'Nome', Icons.person_outline_rounded),
                     const SizedBox(height: 12),
-                    _field(_email, 'E-mail', Icons.mail_outline_rounded, keyboard: TextInputType.emailAddress),
+                    _field(
+                      _email,
+                      'E-mail de acesso',
+                      Icons.mail_outline_rounded,
+                      keyboard: TextInputType.emailAddress,
+                      readOnly: true,
+                      helperText: 'O e-mail de login não é alterado por esta tela.',
+                    ),
                     const SizedBox(height: 12),
                     _field(_phone, 'Telefone / WhatsApp', Icons.phone_outlined, keyboard: TextInputType.phone),
                     const SizedBox(height: 20),
@@ -159,15 +180,24 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
     );
   }
 
-  Widget _field(TextEditingController controller, String label, IconData icon, {TextInputType? keyboard}) {
+  Widget _field(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    TextInputType? keyboard,
+    bool readOnly = false,
+    String? helperText,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: keyboard,
+      readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
+        helperText: helperText,
         prefixIcon: Icon(icon),
         filled: true,
-        fillColor: const Color(0xFFF8FAFC),
+        fillColor: readOnly ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
       ),
