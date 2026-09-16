@@ -39,7 +39,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return AuthLayout(
       eyebrow: 'Cadastro de cliente',
       title: 'Sua próxima lavagem começa antes de você chegar.',
-      description: 'Crie sua conta para cadastrar seu veículo, agendar uma lavagem e acompanhar o atendimento.',
+      description: 'Crie sua conta para agendar uma lavagem e acompanhar seus atendimentos.',
       child: Form(
         key: formKey,
         child: Column(
@@ -76,7 +76,7 @@ class _RegisterPageState extends State<RegisterPage> {
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
               decoration: const InputDecoration(labelText: 'E-mail', hintText: 'voce@email.com', prefixIcon: Icon(Icons.mail_outline_rounded)),
-              validator: (v) => (v == null || !v.contains('@')) ? 'Informe um e-mail válido.' : null,
+              validator: (v) => (v == null || !RegExp(r'^\S+@\S+\.\S+$').hasMatch(v.trim())) ? 'Informe um e-mail válido.' : null,
             ),
             const SizedBox(height: 14),
             TextFormField(
@@ -205,12 +205,13 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    final slug = widget.tenantSlug?.trim();
     final session = await controller.submit(
       name: name.text,
       phone: phone.text,
       email: email.text,
       password: password.text,
-      tenantSlug: widget.tenantSlug ?? 'clinicar',
+      tenantSlug: slug != null && slug.isNotEmpty ? slug : null,
     );
     if (!mounted || session == null) return;
     context.go(session.token.isNotEmpty ? RoutePaths.client : '${RoutePaths.login}?area=cliente');
