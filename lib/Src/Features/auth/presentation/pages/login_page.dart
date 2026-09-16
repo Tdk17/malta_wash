@@ -23,6 +23,18 @@ class _LoginPageState extends State<LoginPage> {
   late bool companyArea = (widget.initialArea ?? '').toLowerCase() == 'empresa';
   bool obscurePassword = true;
 
+  static const _companyRoles = <String>{
+    'SUPER_ADMIN',
+    'ADMIN',
+    'MANAGER',
+    'ATTENDANT',
+    'TECHNICIAN',
+    // Legacy aliases kept temporarily for existing sessions/data.
+    'GERENTE',
+    'ATENDENTE',
+    'LAVADOR',
+  };
+
   @override
   void dispose() {
     email.dispose();
@@ -169,15 +181,9 @@ class _LoginPageState extends State<LoginPage> {
     final session = await controller.submit(email.text, password.text);
     if (!mounted || session == null) return;
 
-    final role = (session.role ?? '').toUpperCase();
-    final isSuper = role.contains('SUPER');
-    final isCompany = isSuper ||
-        role.contains('ADMIN') ||
-        role.contains('MANAGER') ||
-        role.contains('GERENTE') ||
-        role.contains('ATENDENTE') ||
-        role.contains('TECH') ||
-        role.contains('LAVADOR');
+    final role = (session.role ?? '').trim().toUpperCase();
+    final isSuper = role == 'SUPER_ADMIN';
+    final isCompany = _companyRoles.contains(role);
 
     if (companyArea && !isCompany) {
       await controller.logoutCurrentSession();
