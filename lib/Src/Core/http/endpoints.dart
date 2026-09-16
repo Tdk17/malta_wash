@@ -57,6 +57,7 @@ abstract final class Endpoints {
   static const team = '/v1/team';
   static String teamMember(String id) => '/v1/team/$id';
   static const shifts = '/v1/shifts';
+  static String shift(String id) => '/v1/shifts/$id';
   static const blocks = '/v1/blocks';
 
   static const dashboardMetrics = '/v1/dashboard/metrics';
