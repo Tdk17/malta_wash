@@ -36,10 +36,10 @@ class _LoginPageState extends State<LoginPage> {
       eyebrow: companyArea ? 'Área da empresa' : 'Área do cliente',
       title: companyArea
           ? 'A operação da sua lavação em um único painel.'
-          : 'Agende, acompanhe e cuide do seu carro com facilidade.',
+          : 'Agende e acompanhe sua lavagem com facilidade.',
       description: companyArea
           ? 'Acesse a operação da sua empresa pelo Malta Wash.'
-          : 'Entre para agendar, acompanhar seu veículo, consultar seu plano e gerenciar seu perfil.',
+          : 'Entre para agendar, acompanhar seus atendimentos, consultar seu plano e gerenciar seu perfil.',
       child: Form(
         key: formKey,
         child: Column(
@@ -151,7 +151,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const Expanded(child: Text('Ainda não possui conta?', style: TextStyle(fontWeight: FontWeight.w600))),
                     TextButton(
-                      onPressed: () => context.go('${RoutePaths.register}?tenant=clinicar'),
+                      onPressed: () => context.go(RoutePaths.register),
                       child: const Text('Criar conta'),
                     ),
                   ],
