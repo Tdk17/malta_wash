@@ -16,6 +16,13 @@ class RemoteAuthRepository implements AuthRepository {
     throw const FormatException('Resposta inesperada da API.');
   }
 
+  Future<void> _saveSession(UserSession session) => sessionStorage.save(
+        token: session.token,
+        role: session.role,
+        userId: session.userId,
+        tenantId: session.tenantId,
+      );
+
   @override
   Future<UserSession> login({required String email, required String password}) async {
     final raw = await httpManager.request(
@@ -26,7 +33,7 @@ class RemoteAuthRepository implements AuthRepository {
     );
     final session = UserSession.fromJson(_map(raw));
     if (session.token.isEmpty) throw const FormatException('Token ausente no login.');
-    await sessionStorage.save(token: session.token, role: session.role, userId: session.userId);
+    await _saveSession(session);
     return session;
   }
 
@@ -52,9 +59,7 @@ class RemoteAuthRepository implements AuthRepository {
       },
     );
     final session = UserSession.fromJson(_map(raw));
-    if (session.token.isNotEmpty) {
-      await sessionStorage.save(token: session.token, role: session.role, userId: session.userId);
-    }
+    if (session.token.isNotEmpty) await _saveSession(session);
     return session;
   }
 
@@ -85,7 +90,7 @@ class RemoteAuthRepository implements AuthRepository {
     if (session.token.isEmpty) {
       throw const FormatException('Token ausente após o cadastro da empresa.');
     }
-    await sessionStorage.save(token: session.token, role: session.role, userId: session.userId);
+    await _saveSession(session);
     return session;
   }
 
