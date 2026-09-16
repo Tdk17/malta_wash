@@ -24,6 +24,7 @@ abstract final class Endpoints {
 
   static const appointments = '/v1/appointments';
   static String appointment(String id) => '/v1/appointments/$id';
+  static String appointmentAdvance(String id) => '/v1/appointments/$id/advance';
   static String appointmentCancel(String id) => '/v1/appointments/$id/cancel';
   static String appointmentReschedule(String id) => '/v1/appointments/$id/reschedule';
   static String appointmentCheckIn(String id) => '/v1/appointments/$id/check-in';
@@ -74,9 +75,6 @@ abstract final class Endpoints {
   static const adminReviews = '/v1/admin/reviews';
   static const uploadPresign = '/v1/uploads/presign';
 
-  // Contratos adicionais requeridos pelas telas completas do front.
-  // Eles não estavam detalhados na tabela mínima do documento base e devem
-  // ser implementados/confirmados no backend.
   static const profile = '/v1/profile';
   static const settings = '/v1/settings';
   static const supportFaqs = '/v1/support/faqs';
