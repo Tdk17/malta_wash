@@ -99,7 +99,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         'defaultLocationId': locationId,
       });
 
-      await _ensureShifts(locationId: locationId, opening: opening, closing: closing);
+      await _syncShifts(locationId: locationId, opening: opening, closing: closing);
       _defaultLocationId = locationId;
 
       if (mounted) {
@@ -159,26 +159,51 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     return id;
   }
 
-  Future<void> _ensureShifts({
+  Future<void> _syncShifts({
     required String locationId,
     required String opening,
     required String closing,
   }) async {
-    final existing = await _repository.list(Endpoints.shifts, query: {'locationId': locationId});
-    if (existing.isNotEmpty) return;
+    final existing = await _repository.list(
+      Endpoints.shifts,
+      query: {'locationId': locationId, 'active': true},
+    );
+    final desiredDays = _workingDays.toList()..sort();
+    final byDay = <int, Map<String, dynamic>>{};
 
-    final days = _workingDays.toList()..sort();
-    for (final weekday in days) {
-      await _repository.create(Endpoints.shifts, {
+    for (final shift in existing) {
+      final weekdays = shift['weekdays'];
+      if (weekdays is List && weekdays.isNotEmpty) {
+        final day = int.tryParse(weekdays.first.toString());
+        if (day != null && day >= 1 && day <= 7 && !byDay.containsKey(day)) {
+          byDay[day] = shift;
+        }
+      }
+    }
+
+    for (final day in desiredDays) {
+      final current = byDay.remove(day);
+      final payload = <String, dynamic>{
         'locationId': locationId,
-        'weekday': weekday,
-        'dayOfWeek': weekday,
+        'weekday': day,
+        'weekdays': [day],
         'startTime': opening,
         'endTime': closing,
-        'openingTime': opening,
-        'closingTime': closing,
         'active': true,
-      });
+      };
+
+      if (current == null) {
+        await _repository.create(Endpoints.shifts, payload);
+        continue;
+      }
+
+      final id = _id(current);
+      if (id.isNotEmpty) await _repository.patch(Endpoints.shift(id), payload);
+    }
+
+    for (final stale in byDay.values) {
+      final id = _id(stale);
+      if (id.isNotEmpty) await _repository.delete(Endpoints.shift(id));
     }
   }
 
