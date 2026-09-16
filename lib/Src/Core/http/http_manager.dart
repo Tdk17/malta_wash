@@ -66,10 +66,16 @@ class HttpManager {
       );
     }
 
+    final tenantId = authenticated ? await _sessionStorage.tenantId() : null;
+    final effectiveParameters = <String, dynamic>{
+      if (tenantId != null && tenantId.isNotEmpty) 'contextTenantId': tenantId,
+      ...parameters,
+    };
+
     try {
       final response = await _dio.post<dynamic>(
         '/functions/$name',
-        data: parameters,
+        data: effectiveParameters,
         options: Options(
           headers: <String, dynamic>{
             if (authenticated && sessionToken != null)
