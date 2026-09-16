@@ -26,6 +26,18 @@ class AppRouter {
   AppRouter(this._sessionStorage);
   final SessionStorage _sessionStorage;
 
+  static const _companyRoles = <String>{
+    'SUPER_ADMIN',
+    'ADMIN',
+    'MANAGER',
+    'ATTENDANT',
+    'TECHNICIAN',
+    // Legacy aliases kept only so old sessions do not break during migration.
+    'GERENTE',
+    'ATENDENTE',
+    'LAVADOR',
+  };
+
   late final GoRouter router = GoRouter(
     initialLocation: RoutePaths.home,
     redirect: (context, state) async {
@@ -36,16 +48,16 @@ class AppRouter {
       if (public.contains(path)) return null;
       if (!hasSession) return '${RoutePaths.login}?area=cliente';
 
-      final role = (await _sessionStorage.role())?.toUpperCase();
-      if (role == null || role.isEmpty) return null;
-      final isSuperAdmin = role.contains('SUPER');
-      final isAdmin = isSuperAdmin || role.contains('ADMIN') || role.contains('MANAGER') || role.contains('GERENTE') || role.contains('ATENDENTE') || role.contains('TECH') || role.contains('LAVADOR');
+      final role = (await _sessionStorage.role())?.trim().toUpperCase();
+      if (role == null || role.isEmpty) return '${RoutePaths.login}?area=cliente';
+      final isSuperAdmin = role == 'SUPER_ADMIN';
+      final isAdminArea = _companyRoles.contains(role);
       if (path == RoutePaths.adminCalendar) return RoutePaths.adminAppointments;
       if (path == RoutePaths.adminVehicles) return RoutePaths.adminCustomers;
       if (path == RoutePaths.adminLoyalty) return RoutePaths.adminPlans;
-      if (path.startsWith('/super-admin') && !isSuperAdmin) return isAdmin ? RoutePaths.admin : RoutePaths.client;
-      if (path.startsWith('/admin') && !isAdmin) return RoutePaths.client;
-      if (path.startsWith('/cliente') && isAdmin) return isSuperAdmin ? RoutePaths.superAdmin : RoutePaths.admin;
+      if (path.startsWith('/super-admin') && !isSuperAdmin) return isAdminArea ? RoutePaths.admin : RoutePaths.client;
+      if (path.startsWith('/admin') && !isAdminArea) return RoutePaths.client;
+      if (path.startsWith('/cliente') && isAdminArea) return isSuperAdmin ? RoutePaths.superAdmin : RoutePaths.admin;
       return null;
     },
     routes: [
