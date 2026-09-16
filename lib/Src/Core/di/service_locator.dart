@@ -45,7 +45,7 @@ void setupDependencies() {
   sl.registerLazySingleton<CompanyRegisterController>(() => CompanyRegisterController(sl()));
   sl.registerLazySingleton<ForgotPasswordController>(() => ForgotPasswordController(sl()));
   sl.registerLazySingleton<VehiclesController>(() => VehiclesController(sl()));
-  sl.registerFactory<BookingController>(() => BookingController(sl(), sl()));
+  sl.registerFactory<BookingController>(() => BookingController(sl()));
   sl.registerLazySingleton<DashboardController>(() => DashboardController(sl()));
   sl.registerLazySingleton<AppRouter>(() => AppRouter(sl()));
 }

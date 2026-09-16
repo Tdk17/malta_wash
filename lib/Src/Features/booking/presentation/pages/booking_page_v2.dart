@@ -20,7 +20,6 @@ class _BookingPageV2State extends State<BookingPageV2> {
   Widget build(BuildContext context) {
     return Watch((_) {
       final initialLoading = controller.isLoading.value &&
-          controller.vehicles.value.isEmpty &&
           controller.services.value.isEmpty;
 
       if (initialLoading) {
@@ -104,12 +103,12 @@ class _BookingPageV2State extends State<BookingPageV2> {
                               ),
                             )
                           : Icon(
-                              controller.step.value == 3
+                              controller.step.value == 2
                                   ? Icons.check_rounded
                                   : Icons.arrow_forward_rounded,
                             ),
                       label: Text(
-                        controller.step.value == 3
+                        controller.step.value == 2
                             ? 'Confirmar agendamento'
                             : 'Continuar',
                       ),
@@ -175,7 +174,7 @@ class _BookingPageV2State extends State<BookingPageV2> {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  'Escolha veículo, serviço, data e horário. Só o necessário.',
+                  'Escolha o serviço, a data e o horário.',
                   style: TextStyle(color: Color(0xFF94A3B8), height: 1.4),
                 ),
               ],
@@ -198,7 +197,7 @@ class _BookingPageV2State extends State<BookingPageV2> {
   }
 
   Widget _progress() {
-    const labels = ['Veículo', 'Serviço', 'Horário', 'Confirmar'];
+    const labels = ['Serviço', 'Horário', 'Confirmar'];
     final mobile = MediaQuery.sizeOf(context).width < 700;
     return Row(
       children: List.generate(labels.length, (index) {
@@ -262,21 +261,6 @@ class _BookingPageV2State extends State<BookingPageV2> {
     switch (controller.step.value) {
       case 0:
         return _choiceList(
-          title: 'Qual veículo?',
-          subtitle: 'Escolha o veículo que vai receber o serviço.',
-          items: controller.vehicles.value,
-          selectedId: controller.vehicleId.value,
-          icon: Icons.directions_car_filled_rounded,
-          emptyText: 'Cadastre um veículo antes de continuar.',
-          titleOf: (item) => _first(item, const ['model', 'plate'], 'Veículo'),
-          detailOf: (item) => [item['plate'], item['color'], item['category']]
-              .where((e) => e != null && e.toString().trim().isNotEmpty)
-              .map((e) => e.toString())
-              .join(' • '),
-          onTap: (id) => controller.vehicleId.value = id,
-        );
-      case 1:
-        return _choiceList(
           title: 'Escolha o serviço',
           subtitle: 'Selecione a lavagem ou serviço desejado.',
           items: controller.services.value,
@@ -301,7 +285,7 @@ class _BookingPageV2State extends State<BookingPageV2> {
             controller.slots.value = const [];
           },
         );
-      case 2:
+      case 1:
         return _dateTimeStep();
       default:
         return _reviewStep();
@@ -495,23 +479,14 @@ class _BookingPageV2State extends State<BookingPageV2> {
   }
 
   Widget _reviewStep() {
-    final vehicle = _selected(controller.vehicles.value, controller.vehicleId.value);
     final service = _selected(controller.services.value, controller.serviceId.value);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Confirme seu agendamento', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
         const SizedBox(height: 5),
-        const Text('Confira os dados antes de confirmar.', style: TextStyle(color: Color(0xFF667085))),
+        const Text('Confira os dados. O pagamento será feito no local.', style: TextStyle(color: Color(0xFF667085))),
         const SizedBox(height: 18),
-        _reviewRow(
-          Icons.directions_car_filled_rounded,
-          'Veículo',
-          [vehicle['model'], vehicle['plate']]
-              .where((e) => e != null && e.toString().isNotEmpty)
-              .map((e) => e.toString())
-              .join(' • '),
-        ),
         _reviewRow(
           Icons.local_car_wash_rounded,
           'Serviço',
@@ -592,20 +567,16 @@ class _BookingPageV2State extends State<BookingPageV2> {
   Future<void> _continue() async {
     controller.errorMessage.value = null;
 
-    if (controller.step.value == 0 && controller.vehicleId.value == null) {
-      controller.errorMessage.value = 'Selecione um veículo para continuar.';
-      return;
-    }
-    if (controller.step.value == 1 && controller.serviceId.value == null) {
+    if (controller.step.value == 0 && controller.serviceId.value == null) {
       controller.errorMessage.value = 'Selecione um serviço para continuar.';
       return;
     }
-    if (controller.step.value == 2 && controller.startAt.value == null) {
+    if (controller.step.value == 1 && controller.startAt.value == null) {
       controller.errorMessage.value = 'Escolha uma data e um horário disponível.';
       return;
     }
 
-    if (controller.step.value < 3) {
+    if (controller.step.value < 2) {
       controller.step.value++;
       return;
     }

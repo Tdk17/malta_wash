@@ -30,7 +30,7 @@ class ClientHomePage extends StatelessWidget {
                     _ActionCard(
                       icon: Icons.calendar_month_rounded,
                       title: 'Agendar lavagem',
-                      text: 'Escolha o veículo, serviço, data e horário disponível.',
+                      text: 'Escolha o serviço, a data e o horário disponível.',
                       action: 'Agendar agora',
                       primary: true,
                       onTap: () => context.go(RoutePaths.clientBooking),
@@ -145,7 +145,7 @@ class _HeroCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Agende em poucos passos e acompanhe tudo pelo sistema até o veículo ficar pronto.',
+                'Agende em poucos passos e acompanhe tudo pelo sistema até o atendimento ser concluído.',
                 style: TextStyle(color: Colors.white.withOpacity(.67), height: 1.5, fontSize: 14.5),
               ),
             ],
@@ -312,7 +312,7 @@ class _InfoStrip extends StatelessWidget {
         SizedBox(width: 11),
         Expanded(
           child: Text(
-            'Malta Wash organiza seu agendamento, veículo e plano em uma experiência simples e rápida.',
+            'Malta Wash organiza seus agendamentos e planos em uma experiência simples e rápida.',
             style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5, height: 1.4),
           ),
         ),

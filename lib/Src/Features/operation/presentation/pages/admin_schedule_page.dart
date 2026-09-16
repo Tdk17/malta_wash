@@ -18,7 +18,6 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
 
   List<Map<String, dynamic>> _appointments = const [];
   List<Map<String, dynamic>> _customers = const [];
-  List<Map<String, dynamic>> _vehicles = const [];
   List<Map<String, dynamic>> _services = const [];
   bool _loading = true;
   String? _error;
@@ -46,15 +45,13 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
       final results = await Future.wait([
         _repository.list(Endpoints.appointments),
         _repository.list(Endpoints.customers),
-        _repository.list(Endpoints.vehicles),
         _repository.list(Endpoints.services),
       ]);
       if (!mounted) return;
       setState(() {
         _appointments = results[0];
         _customers = results[1];
-        _vehicles = results[2];
-        _services = results[3];
+        _services = results[2];
       });
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
@@ -117,7 +114,7 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
     try {
       await _repository.create(
         Endpoints.appointmentReschedule(id),
-        {'startAt': startAt.toIso8601String()},
+        {'startAt': startAt.toUtc().toIso8601String()},
       );
       await _load();
       _message('Agendamento reagendado.');
@@ -174,7 +171,7 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
               const SizedBox(height: 6),
               const Text('Agendamentos', style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w900)),
               const SizedBox(height: 4),
-              const Text('Cliente, veículo, placa, serviço, horário e status em uma única tela.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+              const Text('Cliente, telefone, serviço, data, horário e status em uma única tela.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
             ],
           );
           final badge = Row(mainAxisSize: MainAxisSize.min, children: [
@@ -201,7 +198,7 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
             child: TextField(
               controller: _search,
               decoration: InputDecoration(
-                hintText: 'Buscar cliente, veículo ou placa...',
+                hintText: 'Buscar cliente, telefone ou serviço...',
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
                 fillColor: Colors.white.withOpacity(.94),
@@ -240,20 +237,15 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
   }
 
   Widget _appointmentCard(Map<String, dynamic> item) {
-    final vehicle = _vehicleFor(item);
-    final customer = _customerFor(item, vehicle);
+
+    final customer = _customerFor(item);
     final service = _serviceFor(item);
     final customerName = _displayName(customer, item);
-    final model = _firstNonEmpty([
-      _value(vehicle, ['model', 'vehicleModel', 'name']),
-      _value(item, ['vehicleName', 'vehicleModel', 'model']),
-      _nested(item, 'vehicle', ['model', 'name']),
-    ], fallback: 'Veículo não informado');
-    final plate = _firstNonEmpty([
-      _value(vehicle, ['plate', 'licensePlate']),
-      _value(item, ['plate', 'licensePlate']),
-      _nested(item, 'vehicle', ['plate', 'licensePlate']),
-    ]);
+    final phone = _firstNonEmpty([
+      _value(customer, ['phone', 'mobile', 'whatsapp']),
+      _value(item, ['customerPhone']),
+    ], fallback: 'Telefone não informado');
+    final createdAt = DateTime.tryParse((item['createdAt'] ?? '').toString())?.toLocal();
     final serviceName = _firstNonEmpty([
       _value(service, ['name', 'title']),
       _value(item, ['serviceName']),
@@ -278,9 +270,10 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
             Text(customerName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
             const SizedBox(height: 5),
             Text(
-              [model, if (plate.isNotEmpty) plate].join(' • '),
+              phone,
               style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700),
             ),
+            if (createdAt != null) Text('Agendado em ${DateFormat('dd/MM/yyyy HH:mm').format(createdAt)}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
             if (serviceName.isNotEmpty) ...[
               const SizedBox(height: 3),
               Text(serviceName, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5)),
@@ -381,40 +374,28 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
     });
 
     return items.where((item) {
-      final vehicle = _vehicleFor(item);
-      final customer = _customerFor(item, vehicle);
+
+      final customer = _customerFor(item);
       final status = _statusLabel(_value(item, ['status', 'state', 'appointmentStatus']));
       if (_status != 'Todos' && status != _status) return false;
       if (q.isEmpty) return true;
       final haystack = [
         _displayName(customer, item),
-        _value(vehicle, ['model', 'vehicleModel', 'name']),
-        _value(vehicle, ['plate', 'licensePlate']),
-        _value(item, ['vehicleName', 'vehicleModel', 'plate', 'licensePlate']),
+        _value(customer, ['phone', 'mobile', 'whatsapp']),
+        _value(item, ['customerPhone']),
+        _value(item, ['serviceName']),
+        _value(_serviceFor(item), ['name', 'title']),
       ].join(' ').toLowerCase();
       return haystack.contains(q);
     }).toList();
   }
 
-  Map<String, dynamic> _vehicleFor(Map<String, dynamic> appointment) {
-    final nested = appointment['vehicle'];
-    if (nested is Map) return nested.map((k, v) => MapEntry(k.toString(), v));
-    final id = _firstNonEmpty([
-      _value(appointment, ['vehicleId', 'carId', 'vehicleObjectId']),
-      _pointerId(appointment['vehicle']),
-    ]);
-    if (id.isEmpty) return const {};
-    return _findById(_vehicles, id);
-  }
-
-  Map<String, dynamic> _customerFor(Map<String, dynamic> appointment, Map<String, dynamic> vehicle) {
+  Map<String, dynamic> _customerFor(Map<String, dynamic> appointment) {
     final nested = appointment['customer'] ?? appointment['client'];
     if (nested is Map) return nested.map((k, v) => MapEntry(k.toString(), v));
     final id = _firstNonEmpty([
       _value(appointment, ['customerId', 'clientId', 'userId', 'customerObjectId']),
       _pointerId(appointment['customer']),
-      _value(vehicle, ['customerId', 'clientId', 'userId', 'ownerId']),
-      _pointerId(vehicle['customer']),
     ]);
     if (id.isEmpty) return const {};
     return _findById(_customers, id);
@@ -459,8 +440,8 @@ class _AdminSchedulePageState extends State<AdminSchedulePage> {
   String _statusLabel(String raw) {
     final value = raw.trim().toUpperCase().replaceAll('-', '_').replaceAll(' ', '_');
     return switch (value) {
-      'SCHEDULED' || 'BOOKED' || 'PENDING' || 'CONFIRMED' => 'Agendado',
-      'IN_PROGRESS' || 'INPROGRESS' || 'STARTED' => 'Em atendimento',
+      'SCHEDULED' || 'BOOKED' || 'PENDING' || 'PENDING_PAYMENT' || 'CONFIRMED' => 'Agendado',
+      'CHECKED_IN' || 'IN_PROGRESS' || 'INPROGRESS' || 'STARTED' => 'Em atendimento',
       'READY' => 'Pronto',
       'FINISHED' || 'COMPLETED' || 'DONE' => 'Finalizado',
       'CANCELLED' || 'CANCELED' => 'Cancelado',

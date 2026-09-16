@@ -20,7 +20,6 @@ import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_servi
 import 'package:malta_wash/Src/Features/operation/presentation/pages/admin_settings_page.dart';
 import 'package:malta_wash/Src/Features/operation/presentation/pages/operation_board_page.dart';
 import 'package:malta_wash/Src/Features/public/presentation/pages/responsive_home_page.dart';
-import 'package:malta_wash/Src/Features/vehicles/presentation/pages/vehicles_page.dart';
 import 'package:malta_wash/Src/Shared/layouts/app_shell.dart';
 
 class AppRouter {
@@ -58,7 +57,7 @@ class AppRouter {
 
       ShellRoute(builder: (_, __, child) => AppShell(mode: ShellMode.client, child: child), routes: [
         GoRoute(path: RoutePaths.client, builder: (_, __) => const ClientHomePage()),
-        GoRoute(path: RoutePaths.clientVehicles, builder: (_, __) => const VehiclesPage()),
+        GoRoute(path: RoutePaths.clientVehicles, redirect: (_, __) => RoutePaths.client),
         GoRoute(path: RoutePaths.clientBooking, builder: (_, __) => const BookingPageV2()),
         GoRoute(path: RoutePaths.clientAppointments, builder: (_, __) => const ClientAppointmentsPage()),
         GoRoute(path: RoutePaths.clientPlans, builder: (_, __) => const ResourceTabsPage(tabs: [

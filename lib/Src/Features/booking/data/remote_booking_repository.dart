@@ -106,7 +106,6 @@ class RemoteBookingRepository implements BookingRepository {
   Future<List<Map<String, dynamic>>> availability({
     String? locationId,
     required String serviceId,
-    required String vehicleId,
     required String date,
   }) async {
     final raw = await _http.request(
@@ -115,7 +114,6 @@ class RemoteBookingRepository implements BookingRepository {
         if (locationId != null && locationId.isNotEmpty)
           'locationId': locationId,
         'serviceId': serviceId,
-        'vehicleId': vehicleId,
         'date': date,
       },
     );

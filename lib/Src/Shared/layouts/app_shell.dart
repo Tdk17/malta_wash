@@ -141,7 +141,6 @@ class _Navigation extends StatelessWidget {
     _NavItem('Início', Icons.home_rounded, RoutePaths.client),
     _NavItem('Agendar lavagem', Icons.calendar_month_rounded, RoutePaths.clientBooking),
     _NavItem('Meus agendamentos', Icons.event_note_rounded, RoutePaths.clientAppointments),
-    _NavItem('Meus veículos', Icons.directions_car_filled_rounded, RoutePaths.clientVehicles),
     _NavItem('Meu plano', Icons.workspace_premium_rounded, RoutePaths.clientPlans),
     _NavItem('Perfil', Icons.person_rounded, RoutePaths.clientProfile),
   ];

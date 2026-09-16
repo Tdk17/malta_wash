@@ -1,21 +1,17 @@
 import 'package:intl/intl.dart';
 import 'package:malta_wash/Src/Features/booking/domain/booking_repository.dart';
-import 'package:malta_wash/Src/Features/vehicles/domain/vehicles_repository.dart';
 import 'package:signals/signals.dart';
 
 class BookingController {
-  BookingController(this._booking, this._vehicles);
+  BookingController(this._booking);
   final BookingRepository _booking;
-  final VehiclesRepository _vehicles;
 
   final isLoading = signal(false);
   final errorMessage = signal<String?>(null);
   final step = signal(0);
-  final vehicles = signal<List<Map<String, dynamic>>>(const []);
   final services = signal<List<Map<String, dynamic>>>(const []);
   final slots = signal<List<Map<String, dynamic>>>(const []);
 
-  final vehicleId = signal<String?>(null);
   final serviceId = signal<String?>(null);
   final date = signal<DateTime?>(null);
   final startAt = signal<String?>(null);
@@ -29,7 +25,6 @@ class BookingController {
     try {
       final results = await Future.wait([
         _booking.services(),
-        _vehicles.list(),
         _loadDefaultLocation(),
       ]);
 
@@ -37,18 +32,6 @@ class BookingController {
           .where(_hasUsableId)
           .where((item) => item['active'] != false)
           .toList();
-      vehicles.value = (results[1] as List)
-          .map((v) => <String, dynamic>{
-                'id': v.id,
-                'plate': v.plate,
-                'model': v.model,
-                'color': v.color,
-                'category': v.category,
-              })
-          .where(_hasUsableId)
-          .toList();
-
-      if (vehicles.value.length == 1) vehicleId.value = _id(vehicles.value.first);
       if (services.value.length == 1) serviceId.value = _id(services.value.first);
     } catch (e) {
       errorMessage.value = _friendlyError(e);
@@ -94,7 +77,7 @@ class BookingController {
   }
 
   Future<void> loadSlots() async {
-    if (vehicleId.value == null || serviceId.value == null || date.value == null) {
+    if (serviceId.value == null || date.value == null) {
       return;
     }
 
@@ -109,29 +92,16 @@ class BookingController {
       }
 
       final dateText = DateFormat('yyyy-MM-dd').format(date.value!);
-      List<Map<String, dynamic>> rawSlots = const [];
-
-      try {
-        rawSlots = await _booking.availability(
-          locationId: _legacyLocationId,
-          serviceId: serviceId.value!,
-          vehicleId: vehicleId.value!,
-          date: dateText,
-        );
-      } catch (_) {
-        rawSlots = const [];
-      }
-
-      var normalized = rawSlots
+      final rawSlots = await _booking.availability(
+        locationId: _legacyLocationId,
+        serviceId: serviceId.value!,
+        date: dateText,
+      );
+      final normalized = rawSlots
           .map(_normalizeSlot)
           .where((slot) => slot['available'] != false)
-          .where((slot) =>
-              (slot['startAt'] ?? '').toString().trim().isNotEmpty)
+          .where((slot) => (slot['startAt'] ?? '').toString().isNotEmpty)
           .toList();
-
-      if (normalized.isEmpty) {
-        normalized = await _buildSlotsFromCompanySchedule(dateText);
-      }
 
       slots.value = normalized;
       if (normalized.isEmpty) {
@@ -146,126 +116,8 @@ class BookingController {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _buildSlotsFromCompanySchedule(
-      String dateText) async {
-    if (_settings.isEmpty) {
-      try {
-        _settings = await _booking.settings();
-      } catch (_) {
-        return const [];
-      }
-    }
-
-    final selectedDate = date.value!;
-    final workingDays = _settings['workingDays'];
-    if (workingDays is List && workingDays.isNotEmpty) {
-      final allowed = workingDays
-          .map((e) => int.tryParse(e.toString()))
-          .whereType<int>()
-          .toSet();
-      if (!allowed.contains(selectedDate.weekday)) return const [];
-    }
-
-    final opening = _settingText(
-      const ['openingTime', 'opensAt'],
-      fallback: '08:00',
-    );
-    final closing = _settingText(
-      const ['closingTime', 'closesAt'],
-      fallback: '18:00',
-    );
-    final slotMinutes = int.tryParse(
-          _settingText(
-            const ['slotMinutes', 'slotIntervalMinutes'],
-            fallback: '30',
-          ),
-        ) ??
-        30;
-
-    final service = _selectedService();
-    final durationMinutes = int.tryParse(
-          (service['durationMinutes'] ?? service['duration'] ?? slotMinutes)
-              .toString(),
-        ) ??
-        slotMinutes;
-
-    final openTime = _combineDateAndTime(opening);
-    final closeTime = _combineDateAndTime(closing);
-    final open = DateTime.tryParse(openTime);
-    final close = DateTime.tryParse(closeTime);
-    if (open == null || close == null || !close.isAfter(open)) return const [];
-
-    List<Map<String, dynamic>> appointments = const [];
-    try {
-      appointments = await _booking.appointments(
-        locationId: _legacyLocationId,
-        date: dateText,
-      );
-    } catch (_) {}
-
-    final busyRanges = appointments
-        .where((item) => !_isCancelled(item))
-        .map(_appointmentRange)
-        .whereType<_TimeRange>()
-        .toList();
-
-    final now = DateTime.now();
-    final result = <Map<String, dynamic>>[];
-    var cursor = open;
-
-    while (!cursor.add(Duration(minutes: durationMinutes)).isAfter(close)) {
-      final end = cursor.add(Duration(minutes: durationMinutes));
-      final inPast = cursor.isBefore(now);
-      final conflicts = busyRanges.any(
-        (busy) => cursor.isBefore(busy.end) && end.isAfter(busy.start),
-      );
-
-      if (!inPast && !conflicts) {
-        result.add({
-          'startAt': cursor.toIso8601String(),
-          'start': DateFormat('HH:mm').format(cursor),
-          'available': true,
-        });
-      }
-
-      cursor = cursor.add(Duration(minutes: slotMinutes <= 0 ? 30 : slotMinutes));
-    }
-
-    return result;
-  }
-
-  _TimeRange? _appointmentRange(Map<String, dynamic> item) {
-    final rawStart = _firstNonEmpty(item, const [
-      'startAt',
-      'start',
-      'startsAt',
-      'dateTime',
-      'scheduledAt',
-    ]);
-    if (rawStart.isEmpty) return null;
-
-    final start = DateTime.tryParse(rawStart) ??
-        (_looksLikeTime(rawStart) ? DateTime.tryParse(_combineDateAndTime(rawStart)) : null);
-    if (start == null) return null;
-
-    final rawEnd = _firstNonEmpty(item, const ['endAt', 'end', 'endsAt']);
-    final explicitEnd = DateTime.tryParse(rawEnd);
-    if (explicitEnd != null) return _TimeRange(start, explicitEnd);
-
-    final itemDuration = int.tryParse(
-      (item['durationMinutes'] ?? item['duration'] ?? 60).toString(),
-    );
-    return _TimeRange(start, start.add(Duration(minutes: itemDuration ?? 60)));
-  }
-
-  bool _isCancelled(Map<String, dynamic> item) {
-    final status = (item['status'] ?? '').toString().toLowerCase();
-    return status.contains('cancel') || status == 'no_show' || status == 'noshow';
-  }
-
   Future<Map<String, dynamic>?> confirm() async {
-    if (vehicleId.value == null ||
-        serviceId.value == null ||
+    if (serviceId.value == null ||
         startAt.value == null) {
       errorMessage.value = 'Preencha todas as etapas obrigatórias.';
       return null;
@@ -282,7 +134,6 @@ class BookingController {
       return await _booking.createAppointment({
         if (_legacyLocationId != null && _legacyLocationId!.isNotEmpty)
           'locationId': _legacyLocationId,
-        'vehicleId': vehicleId.value,
         'serviceId': serviceId.value,
         'startAt': startAt.value,
       });
@@ -380,14 +231,6 @@ class BookingController {
     return null;
   }
 
-  String _settingText(List<String> keys, {required String fallback}) {
-    for (final key in keys) {
-      final value = _settings[key]?.toString().trim() ?? '';
-      if (value.isNotEmpty) return value;
-    }
-    return fallback;
-  }
-
   String _friendlyError(Object error) {
     final text = error.toString();
     final lower = text.toLowerCase();
@@ -411,10 +254,4 @@ class BookingController {
 
   String _id(Map<String, dynamic> item) =>
       (item['id'] ?? item['objectId'] ?? '').toString().trim();
-}
-
-class _TimeRange {
-  const _TimeRange(this.start, this.end);
-  final DateTime start;
-  final DateTime end;
 }

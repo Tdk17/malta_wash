@@ -18,7 +18,6 @@ class HomePage extends StatelessWidget {
             children: const [
               _Header(),
               _Hero(),
-              _AccessSection(),
               _Footer(),
             ],
           ),
@@ -53,43 +52,6 @@ class _Header extends StatelessWidget {
                       style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900),
                     ),
                   ),
-                  if (!mobile) ...[
-                    TextButton(
-                      onPressed: () => context.go('${RoutePaths.login}?area=cliente'),
-                      child: const Text('Entrar como cliente'),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton(
-                      onPressed: () => context.go('${RoutePaths.login}?area=empresa'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white24),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                      ),
-                      child: const Text('Entrar como empresa'),
-                    ),
-                  ] else
-                    PopupMenuButton<String>(
-                      tooltip: 'Acessar',
-                      color: const Color(0xFF151A21),
-                      icon: Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(.06),
-                          borderRadius: BorderRadius.circular(13),
-                          border: Border.all(color: Colors.white.withOpacity(.08)),
-                        ),
-                        child: const Icon(Icons.menu_rounded, color: Colors.white),
-                      ),
-                      onSelected: (value) {
-                        context.go('${RoutePaths.login}?area=$value');
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'cliente', child: Text('Entrar como cliente', style: TextStyle(color: Colors.white))),
-                        PopupMenuItem(value: 'empresa', child: Text('Entrar como empresa', style: TextStyle(color: Colors.white))),
-                      ],
-                    ),
                 ],
               ),
             ),
@@ -435,63 +397,6 @@ class _SceneGridPainter extends CustomPainter {
   }
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _AccessSection extends StatelessWidget {
-  const _AccessSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFFF4F6F8),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 56, 18, 64),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 780;
-                final client = _AccessCard(icon: Icons.person_rounded, title: 'Cliente', description: 'Entre para agendar uma lavagem, acompanhar seu veículo e consultar seu plano.', button: 'Entrar como cliente', onTap: () => context.go('${RoutePaths.login}?area=cliente'));
-                final company = _AccessCard(icon: Icons.storefront_rounded, title: 'Empresa', description: 'Entre no painel para administrar agenda, clientes, veículos, serviços e planos.', button: 'Entrar como empresa', onTap: () => context.go('${RoutePaths.login}?area=empresa'), dark: true);
-                if (wide) return Row(children: [Expanded(child: client), const SizedBox(width: 18), Expanded(child: company)]);
-                return Column(children: [client, const SizedBox(height: 16), company]);
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AccessCard extends StatelessWidget {
-  const _AccessCard({required this.icon, required this.title, required this.description, required this.button, required this.onTap, this.dark = false});
-  final IconData icon;
-  final String title;
-  final String description;
-  final String button;
-  final VoidCallback onTap;
-  final bool dark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: dark ? const Color(0xFF11161D) : Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: dark ? const Color(0xFF2C333D) : const Color(0xFFE5E8ED))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(width: 50, height: 50, decoration: BoxDecoration(color: const Color(0xFFFF6A00).withOpacity(.12), borderRadius: BorderRadius.circular(15)), child: Icon(icon, color: const Color(0xFFFF6A00))),
-        const SizedBox(height: 20),
-        Text(title, style: TextStyle(color: dark ? Colors.white : const Color(0xFF111827), fontSize: 23, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 9),
-        Text(description, style: TextStyle(color: dark ? Colors.white60 : const Color(0xFF667085), height: 1.5)),
-        const SizedBox(height: 22),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: onTap, style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF6A00), foregroundColor: Colors.white), child: Text(button))),
-      ]),
-    );
-  }
 }
 
 class _Footer extends StatelessWidget {

@@ -22,7 +22,6 @@ class _BookingPageState extends State<BookingPage> {
       color: const Color(0xFFF4F6F8),
       child: Watch((_) {
         if (controller.isLoading.value &&
-            controller.vehicles.value.isEmpty &&
             controller.services.value.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -86,12 +85,12 @@ class _BookingPageState extends State<BookingPage> {
                     FilledButton.icon(
                       onPressed: controller.isLoading.value ? null : _continue,
                       icon: Icon(
-                        controller.step.value == 3
+                        controller.step.value == 2
                             ? Icons.check_rounded
                             : Icons.arrow_forward_rounded,
                       ),
                       label: Text(
-                        controller.step.value == 3
+                        controller.step.value == 2
                             ? 'Confirmar agendamento'
                             : 'Continuar',
                       ),
@@ -119,27 +118,6 @@ class _BookingPageState extends State<BookingPage> {
     switch (controller.step.value) {
       case 0:
         return _selectionStep(
-          title: 'Qual veículo?',
-          subtitle: 'Escolha o veículo que você quer agendar.',
-          items: controller.vehicles.value,
-          selectedId: controller.vehicleId.value,
-          emptyTitle: 'Nenhum veículo cadastrado',
-          emptyText: 'Cadastre um veículo antes de continuar.',
-          icon: Icons.directions_car_filled_rounded,
-          labelBuilder: (item) => _firstText(
-            item,
-            const ['model', 'plate'],
-            fallback: 'Veículo',
-          ),
-          detailBuilder: (item) => [
-            item['plate']?.toString(),
-            item['color']?.toString(),
-            item['category']?.toString(),
-          ].whereType<String>().where((e) => e.trim().isNotEmpty).join(' • '),
-          onSelected: (id) => controller.vehicleId.value = id,
-        );
-      case 1:
-        return _selectionStep(
           title: 'Escolha a lavagem',
           subtitle: 'Selecione uma das opções disponíveis.',
           items: controller.services.value,
@@ -164,7 +142,7 @@ class _BookingPageState extends State<BookingPage> {
           },
           onSelected: (id) => controller.serviceId.value = id,
         );
-      case 2:
+      case 1:
         return _dateAndTimeStep();
       default:
         return _reviewStep();
@@ -372,7 +350,6 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   Widget _reviewStep() {
-    final vehicle = _selected(controller.vehicles.value, controller.vehicleId.value);
     final service = _selected(controller.services.value, controller.serviceId.value);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,15 +368,6 @@ class _BookingPageState extends State<BookingPage> {
           style: TextStyle(color: Color(0xFF667085)),
         ),
         const SizedBox(height: 20),
-        _ReviewRow(
-          icon: Icons.directions_car_filled_rounded,
-          label: 'Veículo',
-          value: [vehicle['model'], vehicle['plate']]
-              .whereType<Object>()
-              .map((e) => e.toString())
-              .where((e) => e.isNotEmpty)
-              .join(' • '),
-        ),
         _ReviewRow(
           icon: Icons.local_car_wash_rounded,
           label: 'Lavagem',
@@ -429,7 +397,7 @@ class _BookingPageState extends State<BookingPage> {
             SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Você poderá acompanhar o agendamento e será avisado quando o veículo estiver pronto.',
+                'Pagamento no local, por Pix, cartão ou dinheiro. Acompanhe seu atendimento pelo sistema.',
                 style: TextStyle(fontSize: 12.5, height: 1.4),
               ),
             ),
@@ -455,20 +423,16 @@ class _BookingPageState extends State<BookingPage> {
   Future<void> _continue() async {
     controller.errorMessage.value = null;
 
-    if (controller.step.value == 0 && controller.vehicleId.value == null) {
-      controller.errorMessage.value = 'Selecione um veículo para continuar.';
-      return;
-    }
-    if (controller.step.value == 1 && controller.serviceId.value == null) {
+    if (controller.step.value == 0 && controller.serviceId.value == null) {
       controller.errorMessage.value = 'Selecione a lavagem para continuar.';
       return;
     }
-    if (controller.step.value == 2 && controller.startAt.value == null) {
+    if (controller.step.value == 1 && controller.startAt.value == null) {
       controller.errorMessage.value = 'Escolha uma data e um horário disponível.';
       return;
     }
 
-    if (controller.step.value < 3) {
+    if (controller.step.value < 2) {
       controller.step.value++;
       return;
     }
@@ -608,7 +572,7 @@ class _Progress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = ['Veículo', 'Lavagem', 'Horário', 'Confirmar'];
+    const labels = ['Lavagem', 'Horário', 'Confirmar'];
     return Row(
       children: List.generate(labels.length, (index) {
         final active = index <= step;
