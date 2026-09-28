@@ -22,30 +22,6 @@ import 'package:malta_wash/Src/Features/dashboard/presentation/controllers/dashb
 import 'package:malta_wash/Src/Features/vehicles/data/remote_vehicles_repository.dart';
 import 'package:malta_wash/Src/Features/vehicles/domain/vehicles_repository.dart';
 import 'package:malta_wash/Src/Features/vehicles/presentation/controllers/vehicles_controller.dart';
-
-final GetIt sl = GetIt.instance;
-
-void setupDependencies() {
-  if (sl.isRegistered<AuthController>()) return;
-
-  sl.registerLazySingleton<SecureStorageService>(() => const FlutterSecureStorageService());
-  sl.registerLazySingleton<SessionStorage>(() => SessionStorage(sl()));
-  sl.registerLazySingleton<HttpManager>(() => HttpManager(sessionStorage: sl()));
-
-  sl.registerLazySingleton<AuthRepository>(() => RemoteAuthRepository(httpManager: sl(), sessionStorage: sl()));
-  sl.registerLazySingleton<ResourceRepository>(() => RemoteResourceRepository(sl()));
-  sl.registerLazySingleton<VehiclesRepository>(() => RemoteVehiclesRepository(sl()));
-  sl.registerLazySingleton<BookingRepository>(() => RemoteBookingRepository(sl()));
-  sl.registerLazySingleton<DashboardRepository>(() => RemoteDashboardRepository(sl()));
-
-  sl.registerLazySingleton<AuthController>(() => AuthController(sl(), sl()));
-  sl.registerLazySingleton<BrandingController>(() => BrandingController(sl()));
-  sl.registerLazySingleton<LoginController>(() => LoginController(sl()));
-  sl.registerLazySingleton<RegisterController>(() => RegisterController(sl()));
-  sl.registerLazySingleton<CompanyRegisterController>(() => CompanyRegisterController(sl()));
-  sl.registerLazySingleton<ForgotPasswordController>(() => ForgotPasswordController(sl()));
-  sl.registerLazySingleton<VehiclesController>(() => VehiclesController(sl()));
-  sl.registerFactory<BookingController>(() => BookingController(sl()));
-  sl.registerLazySingleton<DashboardController>(() => DashboardController(sl()));
-  sl.registerLazySingleton<AppRouter>(() => AppRouter(sl()));
-}
+import 'package:malta_wash/Src/Features/wash_discovery/data/wash_discovery_repository.dart';
+final GetIt sl=GetIt.instance;
+void setupDependencies(){if(sl.isRegistered<AuthController>())return;sl.registerLazySingleton<SecureStorageService>(()=>const FlutterSecureStorageService());sl.registerLazySingleton<SessionStorage>(()=>SessionStorage(sl()));sl.registerLazySingleton<HttpManager>(()=>HttpManager(sessionStorage:sl()));sl.registerLazySingleton<AuthRepository>(()=>RemoteAuthRepository(httpManager:sl(),sessionStorage:sl()));sl.registerLazySingleton<ResourceRepository>(()=>RemoteResourceRepository(sl()));sl.registerLazySingleton<VehiclesRepository>(()=>RemoteVehiclesRepository(sl()));sl.registerLazySingleton<BookingRepository>(()=>RemoteBookingRepository(sl()));sl.registerLazySingleton<DashboardRepository>(()=>RemoteDashboardRepository(sl()));sl.registerLazySingleton<WashDiscoveryRepository>(()=>WashDiscoveryRepository(sl(),sl()));sl.registerLazySingleton<AuthController>(()=>AuthController(sl(),sl()));sl.registerLazySingleton<BrandingController>(()=>BrandingController(sl()));sl.registerLazySingleton<LoginController>(()=>LoginController(sl()));sl.registerLazySingleton<RegisterController>(()=>RegisterController(sl()));sl.registerLazySingleton<CompanyRegisterController>(()=>CompanyRegisterController(sl()));sl.registerLazySingleton<ForgotPasswordController>(()=>ForgotPasswordController(sl()));sl.registerLazySingleton<VehiclesController>(()=>VehiclesController(sl()));sl.registerFactory<BookingController>(()=>BookingController(sl()));sl.registerLazySingleton<DashboardController>(()=>DashboardController(sl()));sl.registerLazySingleton<AppRouter>(()=>AppRouter(sl()));}
