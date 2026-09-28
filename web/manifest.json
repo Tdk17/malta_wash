@@ -1,11 +1,11 @@
 {
-  "name": "Malta Wash — Gestão & Agendamento Automotivo",
-  "short_name": "Malta Wash",
+  "name": "CormeX Wash — Gestão & Agendamento Automotivo",
+  "short_name": "CormeX Wash",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#0B0F14",
-  "theme_color": "#FF6A00",
-  "description": "Gestão e agendamento automotivo.",
+  "background_color": "#F7FAFA",
+  "theme_color": "#123C4A",
+  "description": "CormeX Wash: gestão e agendamento para lavações e estética automotiva.",
   "orientation": "portrait-primary",
   "prefer_related_applications": false
 }
