@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
-  static const brand = Color(0xFFFF6A00);
-  static const brandDark = Color(0xFFE85D00);
-  static const ink = Color(0xFF101828);
-  static const muted = Color(0xFF667085);
-  static const canvas = Color(0xFFF6F7F9);
-  static const border = Color(0xFFE4E7EC);
+  static const brand = Color(0xFF123C4A);
+  static const brandDark = Color(0xFF0B2F3A);
+  static const accent = Color(0xFF27C7B8);
+  static const ink = Color(0xFF172326);
+  static const muted = Color(0xFF607478);
+  static const canvas = Color(0xFFF7FAFA);
+  static const border = Color(0xFFDCE7E8);
 
   static ThemeData get light {
     final scheme = ColorScheme.fromSeed(
@@ -16,11 +17,12 @@ abstract final class AppTheme {
     ).copyWith(
       primary: brand,
       onPrimary: Colors.white,
-      secondary: const Color(0xFF2563EB),
+      secondary: accent,
+      onSecondary: const Color(0xFF062E2B),
       surface: Colors.white,
       surfaceContainerLowest: Colors.white,
-      surfaceContainerLow: const Color(0xFFFAFAFB),
-      surfaceContainer: const Color(0xFFF2F4F7),
+      surfaceContainerLow: const Color(0xFFFAFCFC),
+      surfaceContainer: const Color(0xFFEEF5F5),
       outline: border,
       error: const Color(0xFFD92D20),
     );
@@ -54,7 +56,7 @@ abstract final class AppTheme {
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-        hintStyle: const TextStyle(color: Color(0xFF98A2B3)),
+        hintStyle: const TextStyle(color: Color(0xFF8CA0A4)),
         labelStyle: const TextStyle(color: muted, fontWeight: FontWeight.w600),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -66,7 +68,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: brand, width: 1.6),
+          borderSide: const BorderSide(color: accent, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -77,8 +79,8 @@ abstract final class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: brand,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: const Color(0xFFF2F4F7),
-          disabledForegroundColor: const Color(0xFF98A2B3),
+          disabledBackgroundColor: const Color(0xFFEEF3F3),
+          disabledForegroundColor: const Color(0xFF8CA0A4),
           minimumSize: const Size(0, 48),
           elevation: 0,
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
@@ -97,7 +99,7 @@ abstract final class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: ink,
+          foregroundColor: brand,
           minimumSize: const Size(0, 48),
           side: const BorderSide(color: border),
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
@@ -121,8 +123,8 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: const Color(0xFFF2F4F7),
-        selectedColor: const Color(0xFFFFE9D9),
+        backgroundColor: const Color(0xFFEEF5F5),
+        selectedColor: const Color(0xFFD9F6F2),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         labelStyle: const TextStyle(color: ink, fontWeight: FontWeight.w700),
@@ -130,9 +132,9 @@ abstract final class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: const Color(0xFFFFE9D9),
+        indicatorColor: const Color(0xFFD9F6F2),
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
-          color: states.contains(WidgetState.selected) ? ink : muted,
+          color: states.contains(WidgetState.selected) ? brand : muted,
           fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
           fontSize: 12,
         )),
@@ -143,7 +145,7 @@ abstract final class AppTheme {
         headlineSmall: TextStyle(fontWeight: FontWeight.w800, color: ink, letterSpacing: -0.4),
         titleLarge: TextStyle(fontWeight: FontWeight.w800, color: ink),
         titleMedium: TextStyle(fontWeight: FontWeight.w700, color: ink),
-        bodyLarge: TextStyle(color: Color(0xFF344054), height: 1.45),
+        bodyLarge: TextStyle(color: Color(0xFF344F54), height: 1.45),
         bodyMedium: TextStyle(color: muted, height: 1.4),
       ),
     );
