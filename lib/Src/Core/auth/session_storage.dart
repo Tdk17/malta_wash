@@ -3,32 +3,8 @@ import 'package:malta_wash/Src/Core/storage/secure_storage_service.dart';
 class SessionStorage {
   SessionStorage(this._storage);
   final SecureStorageService _storage;
-
-  static const _tokenKey = 'auth_token';
-  static const _roleKey = 'auth_role';
-  static const _userIdKey = 'auth_user_id';
-  static const _tenantIdKey = 'auth_tenant_id';
-
-  Future<void> save({
-    required String token,
-    String? role,
-    String? userId,
-    String? tenantId,
-  }) async {
-    await _storage.write(_tokenKey, token);
-    if (role != null) await _storage.write(_roleKey, role);
-    if (userId != null) await _storage.write(_userIdKey, userId);
-    if (tenantId != null && tenantId.isNotEmpty) {
-      await _storage.write(_tenantIdKey, tenantId);
-    } else {
-      await _storage.delete(_tenantIdKey);
-    }
-  }
-
-  Future<String?> token() => _storage.read(_tokenKey);
-  Future<String?> role() => _storage.read(_roleKey);
-  Future<String?> userId() => _storage.read(_userIdKey);
-  Future<String?> tenantId() => _storage.read(_tenantIdKey);
-  Future<bool> hasSession() async => (await token())?.isNotEmpty == true;
-  Future<void> clear() => _storage.clear();
+  static const _tokenKey='auth_token'; static const _roleKey='auth_role'; static const _userIdKey='auth_user_id'; static const _tenantIdKey='auth_tenant_id';
+  Future<void> save({required String token,String? role,String? userId,String? tenantId}) async { await _storage.write(_tokenKey,token); if(role!=null) await _storage.write(_roleKey,role); if(userId!=null) await _storage.write(_userIdKey,userId); if(tenantId!=null&&tenantId.isNotEmpty){await _storage.write(_tenantIdKey,tenantId);}else{await _storage.delete(_tenantIdKey);} }
+  Future<void> selectTenant(String tenantId) async { final value=tenantId.trim(); if(value.isEmpty){await _storage.delete(_tenantIdKey);}else{await _storage.write(_tenantIdKey,value);} }
+  Future<String?> token()=>_storage.read(_tokenKey); Future<String?> role()=>_storage.read(_roleKey); Future<String?> userId()=>_storage.read(_userIdKey); Future<String?> tenantId()=>_storage.read(_tenantIdKey); Future<bool> hasSession() async=>(await token())?.isNotEmpty==true; Future<void> clear()=>_storage.clear();
 }
