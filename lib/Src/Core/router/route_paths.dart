@@ -8,6 +8,7 @@ abstract final class RoutePaths {
   static const client = '/cliente';
   static const clientVehicles = '/cliente/veiculos';
   static const clientBooking = '/cliente/agendar';
+  static const clientWashBooking = '/cliente/agendar/horario';
   static const clientAppointments = '/cliente/agendamentos';
   static const clientPlans = '/cliente/planos';
   static const clientPackages = '/cliente/pacotes';

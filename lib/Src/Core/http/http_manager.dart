@@ -266,6 +266,7 @@ class HttpManager {
     'POST /v1/auth/logout': 'v1-auth-logout',
     'GET /v1/auth/me': 'v1-auth-me',
     'POST /v1/auth/password-reset': 'v1-auth-password-reset',
+    'POST /v1/washes-nearby': 'v1-washes-nearby',
     'GET /v1/availability': 'v1-availability-list',
     'GET /v1/dashboard/metrics': 'v1-dashboard-metrics',
     'GET /v1/dashboard/operation': 'v1-dashboard-operation',
